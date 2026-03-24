@@ -71,21 +71,41 @@ function normalizeBeds(rows) {
   })
 }
 
-function getModeButtonStyle(active) {
+function getModeButtonStyle(active, isMobileLike) {
   return {
-    width: 140, // ✅ forces equal size
-    height: 40,
+    width: isMobileLike ? 120 : 140,
+    height: isMobileLike ? 36 : 40,
     borderRadius: 999,
     border: active ? '1px solid #3B82F6' : '1px solid #334155',
     background: active ? '#123A67' : '#111827',
     color: active ? '#66B2FF' : '#CBD5E1',
-    fontSize: 12,
+    fontSize: isMobileLike ? 11 : 12,
     fontWeight: 700,
     letterSpacing: 0.8,
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center', // ✅ centers text
+    justifyContent: 'center',
+    textAlign: 'center',
+    boxSizing: 'border-box',
+  }
+}
+
+function getHeaderButtonStyle(isMobileLike) {
+  return {
+    width: isMobileLike ? 110 : 128,
+    height: isMobileLike ? 36 : 40,
+    borderRadius: 999,
+    border: '1px solid #475569',
+    background: '#111827',
+    color: '#E2E8F0',
+    fontSize: isMobileLike ? 11 : 12,
+    fontWeight: 700,
+    letterSpacing: 0.8,
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
     textAlign: 'center',
     boxSizing: 'border-box',
   }
@@ -100,6 +120,11 @@ export default function Home() {
   const [mounted, setMounted] = useState(false)
   const [viewportWidth, setViewportWidth] = useState(1440)
   const [displayMode, setDisplayMode] = useState('wall')
+
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [loginUsername, setLoginUsername] = useState('')
+  const [loginPassword, setLoginPassword] = useState('')
+  const [loginError, setLoginError] = useState('')
 
   const isMobileLike = viewportWidth < 900
   const isNurseMode = displayMode === 'nurse'
@@ -155,9 +180,24 @@ export default function Home() {
     setMounted(true)
     setViewportWidth(window.innerWidth)
 
+    const savedAuth = window.localStorage.getItem('carecell_demo_auth')
+    if (savedAuth === 'true') {
+      setIsAuthenticated(true)
+    }
+
     const handleResize = () => {
       setViewportWidth(window.innerWidth)
     }
+
+    window.addEventListener('resize', handleResize)
+
+    return () => {
+      window.removeEventListener('resize', handleResize)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!isAuthenticated) return
 
     fetchBeds()
     fetchStates()
@@ -165,8 +205,6 @@ export default function Home() {
     const timer = setInterval(() => {
       setNowTick(Date.now())
     }, 5000)
-
-    window.addEventListener('resize', handleResize)
 
     const channel = supabase
       .channel(`beds-realtime-${Date.now()}`)
@@ -185,10 +223,32 @@ export default function Home() {
 
     return () => {
       clearInterval(timer)
-      window.removeEventListener('resize', handleResize)
       supabase.removeChannel(channel)
     }
-  }, [])
+  }, [isAuthenticated])
+
+  function handleLogin(e) {
+    e.preventDefault()
+
+    if (loginUsername === 'Hospital 1' && loginPassword === 'demo') {
+      setIsAuthenticated(true)
+      setLoginError('')
+      window.localStorage.setItem('carecell_demo_auth', 'true')
+      setLoginPassword('')
+      return
+    }
+
+    setLoginError('Invalid username or password')
+  }
+
+  function handleSignOut() {
+    setIsAuthenticated(false)
+    setSelectedBed(null)
+    setLoginUsername('')
+    setLoginPassword('')
+    setLoginError('')
+    window.localStorage.removeItem('carecell_demo_auth')
+  }
 
   async function updateBedState(bedId, stateId) {
     const newTimestamp = new Date().toISOString()
@@ -231,6 +291,158 @@ export default function Home() {
   const gridGap = isMobileLike ? '12px' : 'clamp(16px, 2vw, 28px)'
   const cardPadding = isMobileLike ? '12px' : 'clamp(14px, 1.8vw, 28px)'
 
+  if (!mounted) {
+    return null
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <main
+        style={{
+          minHeight: '100dvh',
+          width: '100vw',
+          background: '#07111f',
+          color: 'white',
+          fontFamily: 'Arial, sans-serif',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 24,
+          boxSizing: 'border-box',
+        }}
+      >
+        <div
+          style={{
+            width: '100%',
+            maxWidth: 420,
+            background: '#0d1730',
+            border: '1px solid #1D2A4A',
+            borderRadius: 24,
+            padding: isMobileLike ? 20 : 28,
+            boxShadow: '0 20px 50px rgba(0,0,0,0.35)',
+          }}
+        >
+          <div
+            style={{
+              fontSize: isMobileLike ? 28 : 34,
+              fontWeight: 700,
+              letterSpacing: 2,
+              marginBottom: 10,
+            }}
+          >
+            CARE CELL
+          </div>
+
+          <div
+            style={{
+              width: 56,
+              height: 4,
+              background: '#3B82F6',
+              borderRadius: 999,
+              marginBottom: 18,
+            }}
+          />
+
+          <div
+            style={{
+              color: '#8DA2C0',
+              fontSize: 14,
+              letterSpacing: 1,
+              marginBottom: 24,
+            }}
+          >
+            DEMO LOGIN
+          </div>
+
+          <form
+            onSubmit={handleLogin}
+            style={{
+              display: 'grid',
+              gap: 14,
+            }}
+          >
+            <input
+              type="text"
+              placeholder="Username"
+              value={loginUsername}
+              onChange={(e) => setLoginUsername(e.target.value)}
+              style={{
+                width: '100%',
+                height: 46,
+                borderRadius: 12,
+                border: '1px solid #334155',
+                background: '#111827',
+                color: 'white',
+                padding: '0 14px',
+                boxSizing: 'border-box',
+                fontSize: 14,
+              }}
+            />
+
+            <input
+              type="password"
+              placeholder="Password"
+              value={loginPassword}
+              onChange={(e) => setLoginPassword(e.target.value)}
+              style={{
+                width: '100%',
+                height: 46,
+                borderRadius: 12,
+                border: '1px solid #334155',
+                background: '#111827',
+                color: 'white',
+                padding: '0 14px',
+                boxSizing: 'border-box',
+                fontSize: 14,
+              }}
+            />
+
+            {loginError && (
+              <div
+                style={{
+                  color: '#ff6b6b',
+                  fontSize: 13,
+                }}
+              >
+                {loginError}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              style={{
+                height: 46,
+                borderRadius: 12,
+                border: '1px solid #3B82F6',
+                background: '#123A67',
+                color: '#66B2FF',
+                fontSize: 13,
+                fontWeight: 700,
+                letterSpacing: 1,
+                cursor: 'pointer',
+              }}
+            >
+              SIGN IN
+            </button>
+          </form>
+
+          <div
+            style={{
+              marginTop: 18,
+              color: '#64748B',
+              fontSize: 12,
+              lineHeight: 1.5,
+            }}
+          >
+            Username: <strong>Hospital 1</strong>
+            <br />
+            Password: <strong>demo</strong>
+          </div>
+        </div>
+      </main>
+    )
+  }
+
   return (
     <main
       style={{
@@ -260,13 +472,13 @@ export default function Home() {
       >
         <div
           style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
+            display: 'grid',
+            gridTemplateColumns: '1fr auto 1fr',
+            alignItems: 'start',
             gap: '16px',
           }}
         >
-          <div style={{ minWidth: 0 }}>
+          <div style={{ minWidth: 0, justifySelf: 'start' }}>
             <div
               style={{
                 fontSize: isMobileLike ? '28px' : 'clamp(28px, 4vw, 56px)',
@@ -304,6 +516,25 @@ export default function Home() {
 
           <div
             style={{
+              justifySelf: 'center',
+              alignSelf: 'start',
+              paddingTop: 4,
+            }}
+          >
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                handleSignOut()
+              }}
+              style={getHeaderButtonStyle(isMobileLike)}
+            >
+              SIGN OUT
+            </button>
+          </div>
+
+          <div
+            style={{
+              justifySelf: 'end',
               textAlign: 'right',
               display: 'flex',
               flexDirection: 'column',
@@ -319,13 +550,11 @@ export default function Home() {
                 lineHeight: 1.05,
               }}
             >
-              {mounted
-                ? new Date(nowTick).toLocaleTimeString([], {
-                    hour: 'numeric',
-                    minute: '2-digit',
-                    hour12: true,
-                  })
-                : '--:--'}
+              {new Date(nowTick).toLocaleTimeString([], {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true,
+              })}
             </div>
 
             <div
@@ -336,15 +565,13 @@ export default function Home() {
                 whiteSpace: 'nowrap',
               }}
             >
-              {mounted
-                ? new Date(nowTick)
-                    .toLocaleDateString([], {
-                      weekday: 'short',
-                      day: '2-digit',
-                      month: 'short',
-                    })
-                    .toUpperCase()
-                : '--- -- ---'}
+              {new Date(nowTick)
+                .toLocaleDateString([], {
+                  weekday: 'short',
+                  day: '2-digit',
+                  month: 'short',
+                })
+                .toUpperCase()}
             </div>
 
             <div
@@ -361,7 +588,7 @@ export default function Home() {
                   setDisplayMode('wall')
                   setSelectedBed(null)
                 }}
-                style={getModeButtonStyle(isWallMode)}
+                style={getModeButtonStyle(isWallMode, isMobileLike)}
               >
                 WALL DISPLAY
               </button>
@@ -371,7 +598,7 @@ export default function Home() {
                   e.stopPropagation()
                   setDisplayMode('nurse')
                 }}
-                style={getModeButtonStyle(isNurseMode)}
+                style={getModeButtonStyle(isNurseMode, isMobileLike)}
               >
                 NURSE DISPLAY
               </button>
