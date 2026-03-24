@@ -497,13 +497,21 @@ export default function Home() {
       >
         <div
           style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr auto 1fr',
+            display: isMobileLike ? 'grid' : 'grid',
+            gridTemplateColumns: isMobileLike ? '1fr 1fr' : '1fr auto 1fr',
+            gridTemplateRows: isMobileLike ? 'auto auto' : 'auto',
             alignItems: 'start',
             gap: '16px',
           }}
         >
-          <div style={{ minWidth: 0, justifySelf: 'start' }}>
+          <div
+            style={{
+              minWidth: 0,
+              justifySelf: 'start',
+              gridColumn: isMobileLike ? '1 / 2' : 'auto',
+              gridRow: isMobileLike ? '1 / 2' : 'auto',
+            }}
+          >
             <div
               style={{
                 fontSize: isMobileLike ? '28px' : 'clamp(28px, 4vw, 56px)',
@@ -541,9 +549,12 @@ export default function Home() {
 
           <div
             style={{
-              justifySelf: 'center',
+              justifySelf: isMobileLike ? 'end' : 'center',
               alignSelf: 'start',
-              paddingTop: 4,
+              paddingTop: isMobileLike ? 0 : 4,
+              gridColumn: isMobileLike ? '1 / 3' : 'auto',
+              gridRow: isMobileLike ? '2 / 3' : 'auto',
+              marginTop: isMobileLike ? 2 : 0,
             }}
           >
             <button
@@ -564,7 +575,9 @@ export default function Home() {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'flex-end',
-              gap: 10,
+              gap: isMobileLike ? 8 : 10,
+              gridColumn: isMobileLike ? '2 / 3' : 'auto',
+              gridRow: isMobileLike ? '1 / 2' : 'auto',
             }}
           >
             <div
@@ -742,9 +755,10 @@ export default function Home() {
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: isMobileLike ? '1fr' : 'minmax(0, 1fr) 240px',
-                gap: isMobileLike ? 16 : 24,
+                gridTemplateColumns: '1fr',
+                gap: isMobileLike ? 14 : 18,
                 alignItems: 'start',
+                maxWidth: isMobileLike ? '100%' : 980,
               }}
             >
               <div
@@ -755,15 +769,15 @@ export default function Home() {
               >
                 <div
                   style={{
-                    marginBottom: isMobileLike ? 16 : 22,
+                    marginBottom: isMobileLike ? 12 : 16,
                   }}
                 >
                   <div
                     style={{
-                      fontSize: isMobileLike ? 28 : 'clamp(30px, 3vw, 44px)',
+                      fontSize: isMobileLike ? 24 : 'clamp(24px, 2.4vw, 34px)',
                       fontWeight: 700,
                       lineHeight: 1.05,
-                      marginBottom: 12,
+                      marginBottom: 8,
                     }}
                   >
                     Update Bed Status
@@ -772,8 +786,8 @@ export default function Home() {
                   <div
                     style={{
                       color: '#8DA2C0',
-                      fontSize: isMobileLike ? 14 : 18,
-                      letterSpacing: isMobileLike ? 2 : 3,
+                      fontSize: isMobileLike ? 12 : 15,
+                      letterSpacing: isMobileLike ? 1.5 : 2,
                       whiteSpace: 'normal',
                     }}
                   >
@@ -784,19 +798,19 @@ export default function Home() {
                 <div
                   style={{
                     borderTop: '1px solid #1F2A44',
-                    paddingTop: isMobileLike ? 16 : 24,
+                    paddingTop: isMobileLike ? 14 : 18,
                     display: 'grid',
-                    gap: isMobileLike ? 18 : 26,
+                    gap: isMobileLike ? 14 : 18,
                   }}
                 >
                   <div>
                     <div
                       style={{
                         color: '#5E7393',
-                        fontSize: isMobileLike ? 12 : 14,
-                        letterSpacing: isMobileLike ? 1.5 : 2.5,
+                        fontSize: isMobileLike ? 11 : 12,
+                        letterSpacing: isMobileLike ? 1.2 : 2,
                         fontWeight: 700,
-                        marginBottom: 14,
+                        marginBottom: 10,
                       }}
                     >
                       SELECT BED
@@ -806,7 +820,7 @@ export default function Home() {
                       style={{
                         display: 'grid',
                         gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
-                        gap: isMobileLike ? 10 : 14,
+                        gap: isMobileLike ? 8 : 10,
                       }}
                     >
                       {beds.slice(0, 4).map((bed) => {
@@ -817,16 +831,16 @@ export default function Home() {
                             key={bed.id}
                             onClick={() => setSelectedBed(bed.id)}
                             style={{
-                              height: isMobileLike ? 64 : 76,
-                              borderRadius: 20,
+                              height: isMobileLike ? 52 : 58,
+                              borderRadius: 16,
                               border: active
                                 ? '1px solid #E5E7EB'
                                 : '1px solid #1D2A4A',
                               background: active ? '#E5E7EB' : '#17233C',
                               color: active ? '#111827' : '#8DA2C0',
-                              fontSize: isMobileLike ? 24 : 34,
+                              fontSize: isMobileLike ? 20 : 26,
                               fontWeight: 700,
-                              letterSpacing: isMobileLike ? 2 : 3,
+                              letterSpacing: isMobileLike ? 1.5 : 2,
                               cursor: 'pointer',
                             }}
                           >
@@ -840,24 +854,24 @@ export default function Home() {
                   <div
                     style={{
                       borderTop: '1px solid #1F2A44',
-                      paddingTop: isMobileLike ? 18 : 26,
+                      paddingTop: isMobileLike ? 14 : 18,
                     }}
                   >
                     <div
                       style={{
                         background: '#0d1730',
                         border: '1px solid #1D2A4A',
-                        borderRadius: isMobileLike ? 18 : 24,
-                        padding: isMobileLike ? 18 : 22,
+                        borderRadius: isMobileLike ? 16 : 20,
+                        padding: isMobileLike ? 14 : 16,
                       }}
                     >
                       <div
                         style={{
                           color: '#5E7393',
-                          fontSize: isMobileLike ? 12 : 14,
-                          letterSpacing: isMobileLike ? 1.5 : 2.5,
+                          fontSize: isMobileLike ? 11 : 12,
+                          letterSpacing: isMobileLike ? 1.2 : 2,
                           fontWeight: 700,
-                          marginBottom: 16,
+                          marginBottom: 10,
                         }}
                       >
                         CURRENT STATUS
@@ -866,10 +880,10 @@ export default function Home() {
                       <div
                         style={{
                           color: getStateStyles(selectedBedData.care_states?.color).text,
-                          fontSize: isMobileLike ? 28 : 'clamp(28px, 3vw, 46px)',
+                          fontSize: isMobileLike ? 22 : 'clamp(22px, 2.2vw, 34px)',
                           fontWeight: 700,
                           lineHeight: 1.05,
-                          marginBottom: 18,
+                          marginBottom: 12,
                           wordBreak: 'break-word',
                         }}
                       >
@@ -889,10 +903,10 @@ export default function Home() {
                           <div
                             style={{
                               color: '#5E7393',
-                              fontSize: isMobileLike ? 11 : 12,
-                              letterSpacing: 1.5,
+                              fontSize: isMobileLike ? 10 : 11,
+                              letterSpacing: 1.2,
                               fontWeight: 700,
-                              marginBottom: 6,
+                              marginBottom: 4,
                             }}
                           >
                             TIME IN STATE
@@ -900,7 +914,7 @@ export default function Home() {
 
                           <div
                             style={{
-                              fontSize: isMobileLike ? 24 : 34,
+                              fontSize: isMobileLike ? 20 : 24,
                               fontWeight: 700,
                               color: getTimerColor(
                                 getMinutesInState(selectedBedData.state_updated_at)
@@ -915,10 +929,10 @@ export default function Home() {
                         <div
                           style={{
                             color: '#8DA2C0',
-                            fontSize: isMobileLike ? 12 : 13,
-                            letterSpacing: 1.5,
+                            fontSize: isMobileLike ? 11 : 12,
+                            letterSpacing: 1.2,
                             fontWeight: 700,
-                            padding: '8px 12px',
+                            padding: '6px 10px',
                             borderRadius: 999,
                             border: '1px solid #334155',
                             background: '#111827',
@@ -934,16 +948,16 @@ export default function Home() {
                   <div
                     style={{
                       borderTop: '1px solid #1F2A44',
-                      paddingTop: isMobileLike ? 18 : 26,
+                      paddingTop: isMobileLike ? 14 : 18,
                     }}
                   >
                     <div
                       style={{
                         color: '#5E7393',
-                        fontSize: isMobileLike ? 12 : 14,
-                        letterSpacing: isMobileLike ? 1.5 : 2.5,
+                        fontSize: isMobileLike ? 11 : 12,
+                        letterSpacing: isMobileLike ? 1.2 : 2,
                         fontWeight: 700,
-                        marginBottom: 14,
+                        marginBottom: 10,
                       }}
                     >
                       UPDATE TO...
@@ -952,7 +966,7 @@ export default function Home() {
                     <div
                       style={{
                         display: 'grid',
-                        gap: isMobileLike ? 10 : 14,
+                        gap: isMobileLike ? 8 : 10,
                       }}
                     >
                       {states.map((state) => {
@@ -965,8 +979,8 @@ export default function Home() {
                             onClick={() => updateBedState(selectedBedData.id, state.id)}
                             style={{
                               width: '100%',
-                              minHeight: isMobileLike ? 58 : 74,
-                              borderRadius: isMobileLike ? 16 : 22,
+                              minHeight: isMobileLike ? 50 : 56,
+                              borderRadius: isMobileLike ? 14 : 18,
                               border: isCurrent
                                 ? '2px solid #E5E7EB'
                                 : '1px solid #334155',
@@ -976,15 +990,15 @@ export default function Home() {
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'space-between',
-                              gap: 14,
-                              padding: isMobileLike ? '14px 16px' : '18px 22px',
+                              gap: 10,
+                              padding: isMobileLike ? '10px 12px' : '12px 16px',
                               textAlign: 'left',
                               boxSizing: 'border-box',
                             }}
                           >
                             <span
                               style={{
-                                fontSize: isMobileLike ? 14 : 18,
+                                fontSize: isMobileLike ? 13 : 15,
                                 fontWeight: 700,
                                 lineHeight: 1.15,
                                 wordBreak: 'break-word',
@@ -997,13 +1011,13 @@ export default function Home() {
                               <span
                                 style={{
                                   flexShrink: 0,
-                                  padding: isMobileLike ? '7px 10px' : '8px 12px',
+                                  padding: isMobileLike ? '5px 8px' : '6px 10px',
                                   borderRadius: 999,
                                   background: 'rgba(255,255,255,0.12)',
                                   color: '#E5E7EB',
-                                  fontSize: isMobileLike ? 10 : 12,
+                                  fontSize: isMobileLike ? 9 : 10,
                                   fontWeight: 700,
-                                  letterSpacing: 1,
+                                  letterSpacing: 0.8,
                                 }}
                               >
                                 CURRENT
@@ -1013,98 +1027,6 @@ export default function Home() {
                         )
                       })}
                     </div>
-                  </div>
-                </div>
-              </div>
-
-              <div
-                style={{
-                  background: '#0d1730',
-                  border: '1px solid #1D2A4A',
-                  borderRadius: 24,
-                  padding: isMobileLike ? 18 : 22,
-                  height: 'fit-content',
-                }}
-              >
-                <div
-                  style={{
-                    color: '#8DA2C0',
-                    fontSize: isMobileLike ? 13 : 14,
-                    letterSpacing: isMobileLike ? 2 : 2.5,
-                    fontWeight: 700,
-                    marginBottom: 16,
-                  }}
-                >
-                  TIMER STATES
-                </div>
-
-                <div
-                  style={{
-                    display: 'grid',
-                    gap: 16,
-                  }}
-                >
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 14,
-                      color: '#CBD5E1',
-                      fontSize: isMobileLike ? 14 : 16,
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: 28,
-                        height: 28,
-                        borderRadius: 6,
-                        background: '#E5E7EB',
-                        flexShrink: 0,
-                      }}
-                    />
-                    <span>{'< 60 minutes'}</span>
-                  </div>
-
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 14,
-                      color: '#CBD5E1',
-                      fontSize: isMobileLike ? 14 : 16,
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: 28,
-                        height: 28,
-                        borderRadius: 6,
-                        background: '#f5b000',
-                        flexShrink: 0,
-                      }}
-                    />
-                    <span>60-89 minutes</span>
-                  </div>
-
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 14,
-                      color: '#CBD5E1',
-                      fontSize: isMobileLike ? 14 : 16,
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: 28,
-                        height: 28,
-                        borderRadius: 6,
-                        background: '#ff4d4f',
-                        flexShrink: 0,
-                      }}
-                    />
-                    <span>90+ minutes</span>
                   </div>
                 </div>
               </div>
