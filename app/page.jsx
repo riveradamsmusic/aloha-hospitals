@@ -11,6 +11,14 @@ type CareState = {
   priority: number
 }
 
+type BedRow = {
+  id: string
+  bed_number: number
+  state_updated_at: string
+  state_id: string
+  care_states: CareState[] | CareState | null
+}
+
 type Bed = {
   id: string
   bed_number: number
@@ -42,6 +50,28 @@ function getStateStyles(color?: string) {
     default:
       return { background: '#1E293B', text: '#FFFFFF' }
   }
+}
+
+function normalizeBeds(rows: BedRow[] | null): Bed[] {
+  if (!rows) return []
+
+  return rows.map((row) => {
+    let normalizedState: CareState | undefined
+
+    if (Array.isArray(row.care_states)) {
+      normalizedState = row.care_states[0]
+    } else if (row.care_states) {
+      normalizedState = row.care_states
+    }
+
+    return {
+      id: row.id,
+      bed_number: row.bed_number,
+      state_updated_at: row.state_updated_at,
+      state_id: row.state_id,
+      care_states: normalizedState,
+    }
+  })
 }
 
 export default function Home() {
@@ -102,7 +132,7 @@ export default function Home() {
       return
     }
 
-    setBeds((data as Bed[]) || [])
+    setBeds(normalizeBeds((data as BedRow[]) || []))
   }
 
   async function fetchStates() {
