@@ -71,6 +71,21 @@ function normalizeBeds(rows) {
   })
 }
 
+function getModeButtonStyle(active) {
+  return {
+    padding: '10px 16px',
+    borderRadius: 999,
+    border: active ? '1px solid #3B82F6' : '1px solid #334155',
+    background: active ? '#123A67' : '#111827',
+    color: active ? '#66B2FF' : '#CBD5E1',
+    fontSize: 12,
+    fontWeight: 700,
+    letterSpacing: 0.8,
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+  }
+}
+
 export default function Home() {
   const [beds, setBeds] = useState([])
   const [states, setStates] = useState([])
@@ -79,8 +94,11 @@ export default function Home() {
   const [nowTick, setNowTick] = useState(Date.now())
   const [mounted, setMounted] = useState(false)
   const [viewportWidth, setViewportWidth] = useState(1440)
+  const [displayMode, setDisplayMode] = useState('wall')
 
   const isMobileLike = viewportWidth < 900
+  const isNurseMode = displayMode === 'nurse'
+  const isWallMode = displayMode === 'wall'
 
   const selectedBedData = useMemo(
     () => beds.find((bed) => bed.id === selectedBed) || null,
@@ -237,13 +255,44 @@ export default function Home() {
       >
         <div
           style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
+            display: 'grid',
+            gridTemplateColumns: '1fr auto',
             gap: '16px',
+            alignItems: 'start',
           }}
         >
           <div style={{ minWidth: 0 }}>
+            <div
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                gap: 10,
+                marginBottom: 14,
+              }}
+            >
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setDisplayMode('wall')
+                  setSelectedBed(null)
+                }}
+                style={getModeButtonStyle(isWallMode)}
+              >
+                WALL DISPLAY
+              </button>
+
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setDisplayMode('nurse')
+                }}
+                style={getModeButtonStyle(isNurseMode)}
+              >
+                NURSE DISPLAY
+              </button>
+            </div>
+
             <div
               style={{
                 fontSize: isMobileLike ? '28px' : 'clamp(28px, 4vw, 56px)',
@@ -353,16 +402,19 @@ export default function Home() {
                 <div
                   key={bed.id}
                   onClick={(e) => {
+                    if (!isNurseMode) return
                     e.stopPropagation()
                     setSelectedBed(selectedBed === bed.id ? null : bed.id)
                   }}
                   style={{
                     background: '#0d1730',
-                    border: '1px solid #1D2A4A',
+                    border: isNurseMode && selectedBed === bed.id
+                      ? '1px solid #3B82F6'
+                      : '1px solid #1D2A4A',
                     borderRadius: isMobileLike ? 16 : 'clamp(16px, 1.5vw, 28px)',
                     padding: cardPadding,
                     position: 'relative',
-                    cursor: 'pointer',
+                    cursor: isNurseMode ? 'pointer' : 'default',
                     overflow: 'hidden',
                     minHeight: 0,
                     display: 'flex',
@@ -434,7 +486,7 @@ export default function Home() {
                     </div>
                   </div>
 
-                  {!isMobileLike && selectedBed === bed.id && (
+                  {!isMobileLike && isNurseMode && selectedBed === bed.id && (
                     <div
                       onClick={(e) => e.stopPropagation()}
                       style={{
@@ -493,7 +545,7 @@ export default function Home() {
         </div>
       </div>
 
-      {isMobileLike && selectedBedData && (
+      {isMobileLike && isNurseMode && selectedBedData && (
         <div
           onClick={() => setSelectedBed(null)}
           style={{
