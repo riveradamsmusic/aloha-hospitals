@@ -1,11 +1,32 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
+
+function parseSupabaseTimestamp(timestamp) {
+  if (!timestamp || typeof timestamp !== 'string') return Date.now()
+
+  let normalized = timestamp.trim()
+
+  if (normalized.includes(' ') && !normalized.includes('T')) {
+    normalized = normalized.replace(' ', 'T')
+  }
+
+  const hasTimezone =
+    normalized.endsWith('Z') || /[+-]\d{2}:\d{2}$/.test(normalized)
+
+  if (!hasTimezone) {
+    normalized = `${normalized}Z`
+  }
+
+  const parsed = new Date(normalized).getTime()
+
+  return Number.isNaN(parsed) ? Date.now() : parsed
+}
 
 function getMinutesInState(timestamp) {
   const now = Date.now()
-  const then = new Date(timestamp).getTime()
+  const then = parseSupabaseTimestamp(timestamp)
   return Math.max(0, Math.floor((now - then) / 60000))
 }
 
@@ -61,28 +82,10 @@ export default function Home() {
 
   const isMobileLike = viewportWidth < 900
 
-  useEffect(() => {
-    setMounted(true)
-    setViewportWidth(window.innerWidth)
-
-    const handleResize = () => {
-      setViewportWidth(window.innerWidth)
-    }
-
-    fetchBeds()
-    fetchStates()
-
-    const timer = setInterval(() => {
-      setNowTick(Date.now())
-    }, 5000)
-
-    window.addEventListener('resize', handleResize)
-
-    return () => {
-      clearInterval(timer)
-      window.removeEventListener('resize', handleResize)
-    }
-  }, [])
+  const selectedBedData = useMemo(
+    () => beds.find((bed) => bed.id === selectedBed) || null,
+    [beds, selectedBed]
+  )
 
   async function fetchBeds() {
     const { data, error } = await supabase
@@ -124,6 +127,45 @@ export default function Home() {
 
     setStates(data || [])
   }
+
+  useEffect(() => {
+    setMounted(true)
+    setViewportWidth(window.innerWidth)
+
+    const handleResize = () => {
+      setViewportWidth(window.innerWidth)
+    }
+
+    fetchBeds()
+    fetchStates()
+
+    const timer = setInterval(() => {
+      setNowTick(Date.now())
+    }, 5000)
+
+    window.addEventListener('resize', handleResize)
+
+    const channel = supabase
+      .channel(`beds-realtime-${Date.now()}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'beds',
+        },
+        () => {
+          fetchBeds()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      clearInterval(timer)
+      window.removeEventListener('resize', handleResize)
+      supabase.removeChannel(channel)
+    }
+  }, [])
 
   async function updateBedState(bedId, stateId) {
     const newTimestamp = new Date().toISOString()
@@ -392,14 +434,14 @@ export default function Home() {
                     </div>
                   </div>
 
-                  {selectedBed === bed.id && (
+                  {!isMobileLike && selectedBed === bed.id && (
                     <div
                       onClick={(e) => e.stopPropagation()}
                       style={{
                         position: 'absolute',
-                        left: isMobileLike ? 8 : 12,
-                        right: isMobileLike ? 8 : 12,
-                        bottom: isMobileLike ? 8 : 12,
+                        left: 12,
+                        right: 12,
+                        bottom: 12,
                         background: '#111827',
                         border: '1px solid #374151',
                         borderRadius: 12,
@@ -423,13 +465,19 @@ export default function Home() {
                               color: stateStyles.text,
                               border: '1px solid #374151',
                               borderRadius: 10,
-                              padding: isMobileLike ? '8px 6px' : '8px 10px',
+                              padding: '8px 10px',
                               cursor: 'pointer',
-                              fontSize: isMobileLike ? 10 : 11,
+                              fontSize: 11,
                               fontWeight: 700,
                               letterSpacing: 0.4,
                               lineHeight: 1.1,
-                              minHeight: isMobileLike ? 38 : 42,
+                              minHeight: 42,
+                              whiteSpace: 'normal',
+                              wordBreak: 'break-word',
+                              overflowWrap: 'anywhere',
+                              boxSizing: 'border-box',
+                              width: '100%',
+                              textAlign: 'center',
                             }}
                           >
                             {state.display_name}
@@ -444,6 +492,94 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {isMobileLike && selectedBedData && (
+        <div
+          onClick={() => setSelectedBed(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.45)',
+            zIndex: 100,
+            display: 'flex',
+            alignItems: 'flex-end',
+            justifyContent: 'center',
+            padding: 12,
+            boxSizing: 'border-box',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: '100%',
+              maxWidth: 420,
+              background: '#111827',
+              border: '1px solid #374151',
+              borderRadius: 16,
+              padding: 12,
+              boxShadow: '0 18px 50px rgba(0,0,0,0.45)',
+              boxSizing: 'border-box',
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              style={{
+                color: '#8DA2C0',
+                fontSize: 12,
+                letterSpacing: 1,
+                marginBottom: 10,
+                fontWeight: 700,
+                whiteSpace: 'normal',
+                wordBreak: 'break-word',
+              }}
+            >
+              BED {String(selectedBedData.bed_number).padStart(2, '0')} STATUS
+            </div>
+
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr',
+                gap: 8,
+                width: '100%',
+              }}
+            >
+              {states.map((state) => {
+                const stateStyles = getStateStyles(state.color)
+
+                return (
+                  <button
+                    key={state.id}
+                    onClick={() => updateBedState(selectedBedData.id, state.id)}
+                    style={{
+                      background: stateStyles.background,
+                      color: stateStyles.text,
+                      border: '1px solid #374151',
+                      borderRadius: 10,
+                      padding: '10px 12px',
+                      cursor: 'pointer',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      letterSpacing: 0.4,
+                      lineHeight: 1.2,
+                      minHeight: 42,
+                      whiteSpace: 'normal',
+                      wordBreak: 'break-word',
+                      overflowWrap: 'anywhere',
+                      boxSizing: 'border-box',
+                      width: '100%',
+                      maxWidth: '100%',
+                      textAlign: 'center',
+                    }}
+                  >
+                    {state.display_name}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }
