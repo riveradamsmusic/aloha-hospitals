@@ -391,7 +391,7 @@ export default function Home() {
                         padding: isMobileLike
                           ? '14px 10px'
                           : 'clamp(14px, 1.8vw, 28px) clamp(12px, 1.6vw, 24px)',
-                        fontSize: isMobileLike ? '15px' : 'clamp(14px, 1.8vw, 28px)',
+                        fontSize: isMobileLike ? '15px' : 'clamp(14px, 1.2vw, 22px)',
                         fontWeight: 700,
                         textAlign: 'center',
                         marginBottom: isMobileLike ? '12px' : 'clamp(14px, 2vw, 28px)',
@@ -407,7 +407,7 @@ export default function Home() {
                     <div
                       style={{
                         color: '#5E7393',
-                        fontSize: isMobileLike ? '10px' : 'clamp(10px, 1vw, 18px)',
+                        fontSize: isMobileLike ? '10px' : 'clamp(10px, 0.8vw, 15px)',
                         letterSpacing: isMobileLike ? '1px' : 'clamp(1px, 0.2vw, 3px)',
                         marginBottom: isMobileLike ? '6px' : 'clamp(6px, 0.8vw, 12px)',
                       }}
@@ -417,7 +417,7 @@ export default function Home() {
 
                     <div
                       style={{
-                        fontSize: isMobileLike ? '24px' : 'clamp(24px, 4vw, 54px)',
+                        fontSize: isMobileLike ? '24px' : 'clamp(22px, 2.4vw, 40px)',
                         fontWeight: 700,
                         color:
                           minutes >= 90
