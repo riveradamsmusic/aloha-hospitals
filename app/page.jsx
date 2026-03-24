@@ -73,7 +73,8 @@ function normalizeBeds(rows) {
 
 function getModeButtonStyle(active) {
   return {
-    padding: '10px 16px',
+    width: 140, // ✅ forces equal size
+    height: 40,
     borderRadius: 999,
     border: active ? '1px solid #3B82F6' : '1px solid #334155',
     background: active ? '#123A67' : '#111827',
@@ -82,7 +83,11 @@ function getModeButtonStyle(active) {
     fontWeight: 700,
     letterSpacing: 0.8,
     cursor: 'pointer',
-    whiteSpace: 'nowrap',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center', // ✅ centers text
+    textAlign: 'center',
+    boxSizing: 'border-box',
   }
 }
 
