@@ -3,37 +3,13 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
-type CareState = {
-  id: string
-  name: string
-  display_name: string
-  color: string
-  priority: number
-}
-
-type BedRow = {
-  id: string
-  bed_number: number
-  state_updated_at: string
-  state_id: string
-  care_states: CareState[] | CareState | null
-}
-
-type Bed = {
-  id: string
-  bed_number: number
-  state_updated_at: string
-  state_id: string
-  care_states?: CareState
-}
-
-function getMinutesInState(timestamp: string) {
+function getMinutesInState(timestamp) {
   const now = Date.now()
   const then = new Date(timestamp).getTime()
   return Math.max(0, Math.floor((now - then) / 60000))
 }
 
-function getStateStyles(color?: string) {
+function getStateStyles(color) {
   switch (color) {
     case 'blue':
       return { background: '#123A67', text: '#66B2FF' }
@@ -52,11 +28,11 @@ function getStateStyles(color?: string) {
   }
 }
 
-function normalizeBeds(rows: BedRow[] | null): Bed[] {
+function normalizeBeds(rows) {
   if (!rows) return []
 
   return rows.map((row) => {
-    let normalizedState: CareState | undefined
+    let normalizedState
 
     if (Array.isArray(row.care_states)) {
       normalizedState = row.care_states[0]
@@ -75,9 +51,9 @@ function normalizeBeds(rows: BedRow[] | null): Bed[] {
 }
 
 export default function Home() {
-  const [beds, setBeds] = useState<Bed[]>([])
-  const [states, setStates] = useState<CareState[]>([])
-  const [selectedBed, setSelectedBed] = useState<string | null>(null)
+  const [beds, setBeds] = useState([])
+  const [states, setStates] = useState([])
+  const [selectedBed, setSelectedBed] = useState(null)
   const [errorMsg, setErrorMsg] = useState('')
   const [nowTick, setNowTick] = useState(Date.now())
   const [mounted, setMounted] = useState(false)
@@ -132,7 +108,7 @@ export default function Home() {
       return
     }
 
-    setBeds(normalizeBeds((data as BedRow[]) || []))
+    setBeds(normalizeBeds(data || []))
   }
 
   async function fetchStates() {
@@ -146,10 +122,10 @@ export default function Home() {
       return
     }
 
-    setStates((data as CareState[]) || [])
+    setStates(data || [])
   }
 
-  async function updateBedState(bedId: string, stateId: string) {
+  async function updateBedState(bedId, stateId) {
     const newTimestamp = new Date().toISOString()
 
     const { error } = await supabase
