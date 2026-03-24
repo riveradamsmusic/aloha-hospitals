@@ -30,6 +30,22 @@ function getMinutesInState(timestamp) {
   return Math.max(0, Math.floor((now - then) / 60000))
 }
 
+function getFormattedTimeInState(timestamp) {
+  const minutes = getMinutesInState(timestamp)
+
+  if (minutes >= 60) {
+    return `${Math.floor(minutes / 60)}h ${minutes % 60}m`
+  }
+
+  return `${minutes}m`
+}
+
+function getTimerColor(minutes) {
+  if (minutes >= 90) return '#ff4d4f'
+  if (minutes >= 60) return '#f5b000'
+  return '#f8fafc'
+}
+
 function getStateStyles(color) {
   switch (color) {
     case 'blue':
@@ -130,10 +146,15 @@ export default function Home() {
   const isNurseMode = displayMode === 'nurse'
   const isWallMode = displayMode === 'wall'
 
-  const selectedBedData = useMemo(
-    () => beds.find((bed) => bed.id === selectedBed) || null,
-    [beds, selectedBed]
-  )
+  const selectedBedData = useMemo(() => {
+    if (!beds.length) return null
+
+    if (selectedBed) {
+      return beds.find((bed) => bed.id === selectedBed) || null
+    }
+
+    return beds[0] || null
+  }, [beds, selectedBed])
 
   async function fetchBeds() {
     const { data, error } = await supabase
@@ -159,7 +180,15 @@ export default function Home() {
       return
     }
 
-    setBeds(normalizeBeds(data || []))
+    const normalized = normalizeBeds(data || [])
+    setBeds(normalized)
+
+    setSelectedBed((currentSelectedBed) => {
+      if (currentSelectedBed && normalized.some((bed) => bed.id === currentSelectedBed)) {
+        return currentSelectedBed
+      }
+      return normalized[0]?.id || null
+    })
   }
 
   async function fetchStates() {
@@ -283,7 +312,6 @@ export default function Home() {
     )
 
     setNowTick(Date.now())
-    setSelectedBed(null)
   }
 
   const mainPadding = isMobileLike ? '16px' : 'clamp(24px, 3vw, 40px)'
@@ -446,7 +474,7 @@ export default function Home() {
   return (
     <main
       style={{
-        height: '100dvh',
+        minHeight: '100dvh',
         width: '100vw',
         background: '#07111f',
         color: 'white',
@@ -454,19 +482,16 @@ export default function Home() {
         fontFamily: 'Arial, sans-serif',
         boxSizing: 'border-box',
         overflowX: 'hidden',
-        overflowY: isMobileLike ? 'auto' : 'hidden',
+        overflowY: 'auto',
       }}
-      onClick={() => setSelectedBed(null)}
     >
       <div
         style={{
           width: '100%',
           maxWidth: 1800,
-          height: isMobileLike ? 'auto' : '100%',
-          minHeight: isMobileLike ? '100%' : 0,
           margin: '0 auto',
           display: 'grid',
-          gridTemplateRows: isMobileLike ? 'auto auto' : 'auto minmax(0, 1fr)',
+          gridTemplateRows: 'auto auto',
           gap: outerGap,
         }}
       >
@@ -586,7 +611,6 @@ export default function Home() {
                 onClick={(e) => {
                   e.stopPropagation()
                   setDisplayMode('wall')
-                  setSelectedBed(null)
                 }}
                 style={getModeButtonStyle(isWallMode, isMobileLike)}
               >
@@ -620,257 +644,474 @@ export default function Home() {
         >
           {errorMsg && <div style={{ color: '#ff6b6b' }}>{errorMsg}</div>}
 
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gridTemplateRows: isMobileLike
-                ? 'repeat(2, minmax(180px, 1fr))'
-                : 'repeat(2, minmax(0, 1fr))',
-              gap: gridGap,
-              minHeight: 0,
-              height: isMobileLike ? 'auto' : '100%',
-            }}
-          >
-            {beds.slice(0, 4).map((bed) => {
-              const minutes = getMinutesInState(bed.state_updated_at)
-              const styles = getStateStyles(bed.care_states?.color)
+          {isWallMode && (
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gridTemplateRows: isMobileLike
+                  ? 'repeat(2, minmax(180px, 1fr))'
+                  : 'repeat(2, minmax(280px, 1fr))',
+                gap: gridGap,
+                minHeight: 0,
+              }}
+            >
+              {beds.slice(0, 4).map((bed) => {
+                const minutes = getMinutesInState(bed.state_updated_at)
+                const styles = getStateStyles(bed.care_states?.color)
 
-              return (
+                return (
+                  <div
+                    key={bed.id}
+                    style={{
+                      background: '#0d1730',
+                      border: '1px solid #1D2A4A',
+                      borderRadius: isMobileLike ? 16 : 'clamp(16px, 1.5vw, 28px)',
+                      padding: cardPadding,
+                      position: 'relative',
+                      overflow: 'hidden',
+                      minHeight: 0,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <div>
+                      <div
+                        style={{
+                          color: '#8DA2C0',
+                          fontSize: isMobileLike ? '12px' : 'clamp(12px, 1.2vw, 20px)',
+                          letterSpacing: isMobileLike ? '1px' : 'clamp(1px, 0.25vw, 4px)',
+                          marginBottom: isMobileLike ? '10px' : 'clamp(10px, 1.5vw, 24px)',
+                          fontWeight: 600,
+                        }}
+                      >
+                        BED {String(bed.bed_number).padStart(2, '0')}
+                      </div>
+
+                      <div
+                        style={{
+                          background: styles.background,
+                          color: styles.text,
+                          borderRadius: isMobileLike ? 12 : 'clamp(12px, 1.2vw, 20px)',
+                          padding: isMobileLike
+                            ? '14px 10px'
+                            : 'clamp(14px, 1.8vw, 28px) clamp(12px, 1.6vw, 24px)',
+                          fontSize: isMobileLike ? '15px' : 'clamp(14px, 1.2vw, 22px)',
+                          fontWeight: 700,
+                          textAlign: 'center',
+                          marginBottom: isMobileLike ? '12px' : 'clamp(14px, 2vw, 28px)',
+                          lineHeight: 1.15,
+                          wordBreak: 'break-word',
+                        }}
+                      >
+                        {bed.care_states?.display_name || 'NO STATE'}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div
+                        style={{
+                          color: '#5E7393',
+                          fontSize: isMobileLike ? '10px' : 'clamp(10px, 0.8vw, 15px)',
+                          letterSpacing: isMobileLike ? '1px' : 'clamp(1px, 0.2vw, 3px)',
+                          marginBottom: isMobileLike ? '6px' : 'clamp(6px, 0.8vw, 12px)',
+                        }}
+                      >
+                        TIME IN STATE
+                      </div>
+
+                      <div
+                        style={{
+                          fontSize: isMobileLike ? '24px' : 'clamp(22px, 2.4vw, 40px)',
+                          fontWeight: 700,
+                          color: getTimerColor(minutes),
+                          lineHeight: 1.05,
+                        }}
+                      >
+                        {getFormattedTimeInState(bed.state_updated_at)}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          {isNurseMode && selectedBedData && (
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: isMobileLike ? '1fr' : 'minmax(0, 1fr) 240px',
+                gap: isMobileLike ? 16 : 24,
+                alignItems: 'start',
+              }}
+            >
+              <div
+                style={{
+                  background: '#07111f',
+                  minWidth: 0,
+                }}
+              >
                 <div
-                  key={bed.id}
-                  onClick={(e) => {
-                    if (!isNurseMode) return
-                    e.stopPropagation()
-                    setSelectedBed(selectedBed === bed.id ? null : bed.id)
-                  }}
                   style={{
-                    background: '#0d1730',
-                    border:
-                      isNurseMode && selectedBed === bed.id
-                        ? '1px solid #3B82F6'
-                        : '1px solid #1D2A4A',
-                    borderRadius: isMobileLike ? 16 : 'clamp(16px, 1.5vw, 28px)',
-                    padding: cardPadding,
-                    position: 'relative',
-                    cursor: isNurseMode ? 'pointer' : 'default',
-                    overflow: 'hidden',
-                    minHeight: 0,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
+                    marginBottom: isMobileLike ? 16 : 22,
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: isMobileLike ? 28 : 'clamp(30px, 3vw, 44px)',
+                      fontWeight: 700,
+                      lineHeight: 1.05,
+                      marginBottom: 12,
+                    }}
+                  >
+                    Update Bed Status
+                  </div>
+
+                  <div
+                    style={{
+                      color: '#8DA2C0',
+                      fontSize: isMobileLike ? 14 : 18,
+                      letterSpacing: isMobileLike ? 2 : 3,
+                      whiteSpace: 'normal',
+                    }}
+                  >
+                    ICU — FLOOR 3 — CARE CELL A
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    borderTop: '1px solid #1F2A44',
+                    paddingTop: isMobileLike ? 16 : 24,
+                    display: 'grid',
+                    gap: isMobileLike ? 18 : 26,
                   }}
                 >
                   <div>
                     <div
                       style={{
-                        color: '#8DA2C0',
-                        fontSize: isMobileLike ? '12px' : 'clamp(12px, 1.2vw, 20px)',
-                        letterSpacing: isMobileLike ? '1px' : 'clamp(1px, 0.25vw, 4px)',
-                        marginBottom: isMobileLike ? '10px' : 'clamp(10px, 1.5vw, 24px)',
-                        fontWeight: 600,
-                      }}
-                    >
-                      BED {String(bed.bed_number).padStart(2, '0')}
-                    </div>
-
-                    <div
-                      style={{
-                        background: styles.background,
-                        color: styles.text,
-                        borderRadius: isMobileLike ? 12 : 'clamp(12px, 1.2vw, 20px)',
-                        padding: isMobileLike
-                          ? '14px 10px'
-                          : 'clamp(14px, 1.8vw, 28px) clamp(12px, 1.6vw, 24px)',
-                        fontSize: isMobileLike ? '15px' : 'clamp(14px, 1.2vw, 22px)',
-                        fontWeight: 700,
-                        textAlign: 'center',
-                        marginBottom: isMobileLike ? '12px' : 'clamp(14px, 2vw, 28px)',
-                        lineHeight: 1.15,
-                        wordBreak: 'break-word',
-                      }}
-                    >
-                      {bed.care_states?.display_name || 'NO STATE'}
-                    </div>
-                  </div>
-
-                  <div>
-                    <div
-                      style={{
                         color: '#5E7393',
-                        fontSize: isMobileLike ? '10px' : 'clamp(10px, 0.8vw, 15px)',
-                        letterSpacing: isMobileLike ? '1px' : 'clamp(1px, 0.2vw, 3px)',
-                        marginBottom: isMobileLike ? '6px' : 'clamp(6px, 0.8vw, 12px)',
-                      }}
-                    >
-                      TIME IN STATE
-                    </div>
-
-                    <div
-                      style={{
-                        fontSize: isMobileLike ? '24px' : 'clamp(22px, 2.4vw, 40px)',
+                        fontSize: isMobileLike ? 12 : 14,
+                        letterSpacing: isMobileLike ? 1.5 : 2.5,
                         fontWeight: 700,
-                        color:
-                          minutes >= 90
-                            ? '#ff4d4f'
-                            : minutes >= 60
-                            ? '#f5b000'
-                            : '#f8fafc',
-                        lineHeight: 1.05,
+                        marginBottom: 14,
                       }}
                     >
-                      {minutes >= 60
-                        ? `${Math.floor(minutes / 60)}h ${minutes % 60}m`
-                        : `${minutes}m`}
+                      SELECT BED
                     </div>
-                  </div>
 
-                  {!isMobileLike && isNurseMode && selectedBed === bed.id && (
                     <div
-                      onClick={(e) => e.stopPropagation()}
                       style={{
-                        position: 'absolute',
-                        left: 12,
-                        right: 12,
-                        bottom: 12,
-                        background: '#111827',
-                        border: '1px solid #374151',
-                        borderRadius: 12,
-                        padding: 8,
                         display: 'grid',
-                        gridTemplateColumns: '1fr 1fr',
-                        gap: 6,
-                        zIndex: 10,
-                        boxShadow: '0 10px 30px rgba(0,0,0,0.35)',
+                        gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+                        gap: isMobileLike ? 10 : 14,
                       }}
                     >
-                      {states.map((state) => {
-                        const stateStyles = getStateStyles(state.color)
+                      {beds.slice(0, 4).map((bed) => {
+                        const active = selectedBedData?.id === bed.id
 
                         return (
                           <button
-                            key={state.id}
-                            onClick={() => updateBedState(bed.id, state.id)}
+                            key={bed.id}
+                            onClick={() => setSelectedBed(bed.id)}
                             style={{
-                              background: stateStyles.background,
-                              color: stateStyles.text,
-                              border: '1px solid #374151',
-                              borderRadius: 10,
-                              padding: '8px 10px',
-                              cursor: 'pointer',
-                              fontSize: 11,
+                              height: isMobileLike ? 64 : 76,
+                              borderRadius: 20,
+                              border: active
+                                ? '1px solid #E5E7EB'
+                                : '1px solid #1D2A4A',
+                              background: active ? '#E5E7EB' : '#17233C',
+                              color: active ? '#111827' : '#8DA2C0',
+                              fontSize: isMobileLike ? 24 : 34,
                               fontWeight: 700,
-                              letterSpacing: 0.4,
-                              lineHeight: 1.1,
-                              minHeight: 42,
-                              whiteSpace: 'normal',
-                              wordBreak: 'break-word',
-                              overflowWrap: 'anywhere',
-                              boxSizing: 'border-box',
-                              width: '100%',
-                              textAlign: 'center',
+                              letterSpacing: isMobileLike ? 2 : 3,
+                              cursor: 'pointer',
                             }}
                           >
-                            {state.display_name}
+                            {String(bed.bed_number).padStart(2, '0')}
                           </button>
                         )
                       })}
                     </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      </div>
+                  </div>
 
-      {isMobileLike && isNurseMode && selectedBedData && (
-        <div
-          onClick={() => setSelectedBed(null)}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0, 0, 0, 0.45)',
-            zIndex: 100,
-            display: 'flex',
-            alignItems: 'flex-end',
-            justifyContent: 'center',
-            padding: 12,
-            boxSizing: 'border-box',
-          }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              width: '100%',
-              maxWidth: 420,
-              background: '#111827',
-              border: '1px solid #374151',
-              borderRadius: 16,
-              padding: 12,
-              boxShadow: '0 18px 50px rgba(0,0,0,0.45)',
-              boxSizing: 'border-box',
-              overflow: 'hidden',
-            }}
-          >
-            <div
-              style={{
-                color: '#8DA2C0',
-                fontSize: 12,
-                letterSpacing: 1,
-                marginBottom: 10,
-                fontWeight: 700,
-                whiteSpace: 'normal',
-                wordBreak: 'break-word',
-              }}
-            >
-              BED {String(selectedBedData.bed_number).padStart(2, '0')} STATUS
-            </div>
-
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr',
-                gap: 8,
-                width: '100%',
-              }}
-            >
-              {states.map((state) => {
-                const stateStyles = getStateStyles(state.color)
-
-                return (
-                  <button
-                    key={state.id}
-                    onClick={() => updateBedState(selectedBedData.id, state.id)}
+                  <div
                     style={{
-                      background: stateStyles.background,
-                      color: stateStyles.text,
-                      border: '1px solid #374151',
-                      borderRadius: 10,
-                      padding: '10px 12px',
-                      cursor: 'pointer',
-                      fontSize: 12,
-                      fontWeight: 700,
-                      letterSpacing: 0.4,
-                      lineHeight: 1.2,
-                      minHeight: 42,
-                      whiteSpace: 'normal',
-                      wordBreak: 'break-word',
-                      overflowWrap: 'anywhere',
-                      boxSizing: 'border-box',
-                      width: '100%',
-                      maxWidth: '100%',
-                      textAlign: 'center',
+                      borderTop: '1px solid #1F2A44',
+                      paddingTop: isMobileLike ? 18 : 26,
                     }}
                   >
-                    {state.display_name}
-                  </button>
-                )
-              })}
+                    <div
+                      style={{
+                        background: '#0d1730',
+                        border: '1px solid #1D2A4A',
+                        borderRadius: isMobileLike ? 18 : 24,
+                        padding: isMobileLike ? 18 : 22,
+                      }}
+                    >
+                      <div
+                        style={{
+                          color: '#5E7393',
+                          fontSize: isMobileLike ? 12 : 14,
+                          letterSpacing: isMobileLike ? 1.5 : 2.5,
+                          fontWeight: 700,
+                          marginBottom: 16,
+                        }}
+                      >
+                        CURRENT STATUS
+                      </div>
+
+                      <div
+                        style={{
+                          color: getStateStyles(selectedBedData.care_states?.color).text,
+                          fontSize: isMobileLike ? 28 : 'clamp(28px, 3vw, 46px)',
+                          fontWeight: 700,
+                          lineHeight: 1.05,
+                          marginBottom: 18,
+                          wordBreak: 'break-word',
+                        }}
+                      >
+                        {selectedBedData.care_states?.display_name || 'NO STATE'}
+                      </div>
+
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'baseline',
+                          justifyContent: 'space-between',
+                          gap: 12,
+                          flexWrap: 'wrap',
+                        }}
+                      >
+                        <div>
+                          <div
+                            style={{
+                              color: '#5E7393',
+                              fontSize: isMobileLike ? 11 : 12,
+                              letterSpacing: 1.5,
+                              fontWeight: 700,
+                              marginBottom: 6,
+                            }}
+                          >
+                            TIME IN STATE
+                          </div>
+
+                          <div
+                            style={{
+                              fontSize: isMobileLike ? 24 : 34,
+                              fontWeight: 700,
+                              color: getTimerColor(
+                                getMinutesInState(selectedBedData.state_updated_at)
+                              ),
+                              lineHeight: 1.05,
+                            }}
+                          >
+                            {getFormattedTimeInState(selectedBedData.state_updated_at)}
+                          </div>
+                        </div>
+
+                        <div
+                          style={{
+                            color: '#8DA2C0',
+                            fontSize: isMobileLike ? 12 : 13,
+                            letterSpacing: 1.5,
+                            fontWeight: 700,
+                            padding: '8px 12px',
+                            borderRadius: 999,
+                            border: '1px solid #334155',
+                            background: '#111827',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          BED {String(selectedBedData.bed_number).padStart(2, '0')}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      borderTop: '1px solid #1F2A44',
+                      paddingTop: isMobileLike ? 18 : 26,
+                    }}
+                  >
+                    <div
+                      style={{
+                        color: '#5E7393',
+                        fontSize: isMobileLike ? 12 : 14,
+                        letterSpacing: isMobileLike ? 1.5 : 2.5,
+                        fontWeight: 700,
+                        marginBottom: 14,
+                      }}
+                    >
+                      UPDATE TO...
+                    </div>
+
+                    <div
+                      style={{
+                        display: 'grid',
+                        gap: isMobileLike ? 10 : 14,
+                      }}
+                    >
+                      {states.map((state) => {
+                        const stateStyles = getStateStyles(state.color)
+                        const isCurrent = selectedBedData.state_id === state.id
+
+                        return (
+                          <button
+                            key={state.id}
+                            onClick={() => updateBedState(selectedBedData.id, state.id)}
+                            style={{
+                              width: '100%',
+                              minHeight: isMobileLike ? 58 : 74,
+                              borderRadius: isMobileLike ? 16 : 22,
+                              border: isCurrent
+                                ? '2px solid #E5E7EB'
+                                : '1px solid #334155',
+                              background: stateStyles.background,
+                              color: stateStyles.text,
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              gap: 14,
+                              padding: isMobileLike ? '14px 16px' : '18px 22px',
+                              textAlign: 'left',
+                              boxSizing: 'border-box',
+                            }}
+                          >
+                            <span
+                              style={{
+                                fontSize: isMobileLike ? 14 : 18,
+                                fontWeight: 700,
+                                lineHeight: 1.15,
+                                wordBreak: 'break-word',
+                              }}
+                            >
+                              {state.display_name}
+                            </span>
+
+                            {isCurrent && (
+                              <span
+                                style={{
+                                  flexShrink: 0,
+                                  padding: isMobileLike ? '7px 10px' : '8px 12px',
+                                  borderRadius: 999,
+                                  background: 'rgba(255,255,255,0.12)',
+                                  color: '#E5E7EB',
+                                  fontSize: isMobileLike ? 10 : 12,
+                                  fontWeight: 700,
+                                  letterSpacing: 1,
+                                }}
+                              >
+                                CURRENT
+                              </span>
+                            )}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  background: '#0d1730',
+                  border: '1px solid #1D2A4A',
+                  borderRadius: 24,
+                  padding: isMobileLike ? 18 : 22,
+                  height: 'fit-content',
+                }}
+              >
+                <div
+                  style={{
+                    color: '#8DA2C0',
+                    fontSize: isMobileLike ? 13 : 14,
+                    letterSpacing: isMobileLike ? 2 : 2.5,
+                    fontWeight: 700,
+                    marginBottom: 16,
+                  }}
+                >
+                  TIMER STATES
+                </div>
+
+                <div
+                  style={{
+                    display: 'grid',
+                    gap: 16,
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 14,
+                      color: '#CBD5E1',
+                      fontSize: isMobileLike ? 14 : 16,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 28,
+                        height: 28,
+                        borderRadius: 6,
+                        background: '#E5E7EB',
+                        flexShrink: 0,
+                      }}
+                    />
+                    <span>{'< 60 minutes'}</span>
+                  </div>
+
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 14,
+                      color: '#CBD5E1',
+                      fontSize: isMobileLike ? 14 : 16,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 28,
+                        height: 28,
+                        borderRadius: 6,
+                        background: '#f5b000',
+                        flexShrink: 0,
+                      }}
+                    />
+                    <span>60-89 minutes</span>
+                  </div>
+
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 14,
+                      color: '#CBD5E1',
+                      fontSize: isMobileLike ? 14 : 16,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 28,
+                        height: 28,
+                        borderRadius: 6,
+                        background: '#ff4d4f',
+                        flexShrink: 0,
+                      }}
+                    />
+                    <span>90+ minutes</span>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
         </div>
-      )}
+      </div>
     </main>
   )
 }
