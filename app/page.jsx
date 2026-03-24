@@ -255,44 +255,13 @@ export default function Home() {
       >
         <div
           style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr auto',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
             gap: '16px',
-            alignItems: 'start',
           }}
         >
           <div style={{ minWidth: 0 }}>
-            <div
-              style={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                alignItems: 'center',
-                gap: 10,
-                marginBottom: 14,
-              }}
-            >
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setDisplayMode('wall')
-                  setSelectedBed(null)
-                }}
-                style={getModeButtonStyle(isWallMode)}
-              >
-                WALL DISPLAY
-              </button>
-
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setDisplayMode('nurse')
-                }}
-                style={getModeButtonStyle(isNurseMode)}
-              >
-                NURSE DISPLAY
-              </button>
-            </div>
-
             <div
               style={{
                 fontSize: isMobileLike ? '28px' : 'clamp(28px, 4vw, 56px)',
@@ -328,7 +297,15 @@ export default function Home() {
             </div>
           </div>
 
-          <div style={{ textAlign: 'right' }}>
+          <div
+            style={{
+              textAlign: 'right',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-end',
+              gap: 10,
+            }}
+          >
             <div
               style={{
                 fontSize: isMobileLike ? '24px' : 'clamp(24px, 4vw, 56px)',
@@ -351,7 +328,6 @@ export default function Home() {
                 color: '#8DA2C0',
                 fontSize: isMobileLike ? '11px' : 'clamp(10px, 1.1vw, 18px)',
                 letterSpacing: isMobileLike ? '1px' : 'clamp(1px, 0.15vw, 2px)',
-                marginTop: 4,
                 whiteSpace: 'nowrap',
               }}
             >
@@ -364,6 +340,36 @@ export default function Home() {
                     })
                     .toUpperCase()
                 : '--- -- ---'}
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                justifyContent: 'flex-end',
+                gap: 10,
+              }}
+            >
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setDisplayMode('wall')
+                  setSelectedBed(null)
+                }}
+                style={getModeButtonStyle(isWallMode)}
+              >
+                WALL DISPLAY
+              </button>
+
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setDisplayMode('nurse')
+                }}
+                style={getModeButtonStyle(isNurseMode)}
+              >
+                NURSE DISPLAY
+              </button>
             </div>
           </div>
         </div>
@@ -408,9 +414,10 @@ export default function Home() {
                   }}
                   style={{
                     background: '#0d1730',
-                    border: isNurseMode && selectedBed === bed.id
-                      ? '1px solid #3B82F6'
-                      : '1px solid #1D2A4A',
+                    border:
+                      isNurseMode && selectedBed === bed.id
+                        ? '1px solid #3B82F6'
+                        : '1px solid #1D2A4A',
                     borderRadius: isMobileLike ? 16 : 'clamp(16px, 1.5vw, 28px)',
                     padding: cardPadding,
                     position: 'relative',
