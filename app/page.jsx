@@ -401,7 +401,7 @@ export default function Home() {
                 color: 'white',
                 padding: '0 14px',
                 boxSizing: 'border-box',
-                fontSize: 14,
+                fontSize: 16,
               }}
             />
 
@@ -419,7 +419,7 @@ export default function Home() {
                 color: 'white',
                 padding: '0 14px',
                 boxSizing: 'border-box',
-                fontSize: 14,
+                fontSize: 16,
               }}
             />
 
