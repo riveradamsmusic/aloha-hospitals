@@ -40,17 +40,15 @@ function getFormattedTimeInState(timestamp) {
   return `${minutes}m`
 }
 
-function getTimerColor(minutes) {
-  if (minutes >= 60) return '#7DD3FC'
-  if (minutes >= 30) return '#FACC15'
+function getTimerColor() {
   return '#F8FAFC'
 }
 
 function getWallHighlightStyles(minutes) {
   if (minutes >= 60) {
     return {
-      borderColor: '#7DD3FC',
-      boxShadow: '0 0 0 2px rgba(125, 211, 252, 0.32)',
+      borderColor: '#F9A8D4',
+      boxShadow: '0 0 0 2px rgba(249, 168, 212, 0.34)',
     }
   }
 
@@ -680,11 +678,11 @@ export default function Home() {
                 display: 'grid',
                 gridTemplateColumns: '1fr 1fr',
                 gridTemplateRows: isMobileLike
-                  ? 'repeat(2, minmax(160px, 1fr))'
+                  ? 'repeat(2, minmax(0, 1fr))'
                   : 'repeat(2, minmax(0, 1fr))',
                 gap: gridGap,
                 minHeight: 0,
-                height: '100%',
+                height: isMobileLike ? 'calc(100dvh - 230px)' : '100%',
                 alignContent: 'stretch',
               }}
             >
@@ -757,7 +755,7 @@ export default function Home() {
                         style={{
                           fontSize: isMobileLike ? '22px' : 'clamp(20px, 2vw, 34px)',
                           fontWeight: 700,
-                          color: getTimerColor(minutes),
+                          color: getTimerColor(),
                           lineHeight: 1.02,
                         }}
                       >
@@ -937,9 +935,7 @@ export default function Home() {
                             style={{
                               fontSize: isMobileLike ? 18 : 22,
                               fontWeight: 700,
-                              color: getTimerColor(
-                                getMinutesInState(selectedBedData.state_updated_at)
-                              ),
+                              color: getTimerColor(),
                               lineHeight: 1.05,
                             }}
                           >
