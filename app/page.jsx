@@ -472,6 +472,7 @@ export default function Home() {
   return (
     <main
       style={{
+        height: isWallMode && !isMobileLike ? '100dvh' : 'auto',
         minHeight: '100dvh',
         width: '100vw',
         background: '#07111f',
@@ -487,18 +488,17 @@ export default function Home() {
         style={{
           width: '100%',
           maxWidth: 1800,
+          height: isWallMode && !isMobileLike ? '100%' : 'auto',
           margin: '0 auto',
           display: 'grid',
-          gridTemplateRows: isWallMode && !isMobileLike ? 'auto minmax(0, 1fr)' : 'auto auto',
+          gridTemplateRows: isWallMode && !isMobileLike ? 'auto auto minmax(0, 1fr)' : 'auto auto auto',
           gap: outerGap,
-          minHeight: isWallMode && !isMobileLike ? 'calc(100dvh - 2 * 24px)' : 'auto',
         }}
       >
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: isMobileLike ? '1fr auto' : '1fr auto',
-            gridTemplateRows: isMobileLike ? 'auto auto' : 'auto auto',
+            gridTemplateColumns: '1fr auto',
             alignItems: 'start',
             gap: '16px',
           }}
@@ -507,8 +507,6 @@ export default function Home() {
             style={{
               minWidth: 0,
               justifySelf: 'start',
-              gridColumn: '1 / 2',
-              gridRow: '1 / 2',
             }}
           >
             <div
@@ -554,8 +552,6 @@ export default function Home() {
               flexDirection: 'column',
               alignItems: 'flex-end',
               gap: isMobileLike ? 8 : 10,
-              gridColumn: '2 / 3',
-              gridRow: '1 / 2',
             }}
           >
             <div
@@ -589,49 +585,55 @@ export default function Home() {
                 })
                 .toUpperCase()}
             </div>
-          </div>
 
-          <div
-            style={{
-              gridColumn: '1 / 3',
-              gridRow: '2 / 3',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              gap: 10,
-              flexWrap: 'wrap',
+            <div
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                justifyContent: 'flex-end',
+                gap: 10,
+              }}
+            >
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setDisplayMode('wall')
+                }}
+                style={getModeButtonStyle(isWallMode, isMobileLike)}
+              >
+                WALL DISPLAY
+              </button>
+
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setDisplayMode('nurse')
+                }}
+                style={getModeButtonStyle(isNurseMode, isMobileLike)}
+              >
+                NURSE DISPLAY
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            marginTop: isMobileLike ? -4 : 0,
+          }}
+        >
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              handleSignOut()
             }}
+            style={getHeaderButtonStyle(isMobileLike)}
           >
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                setDisplayMode('wall')
-              }}
-              style={getModeButtonStyle(isWallMode, isMobileLike)}
-            >
-              WALL DISPLAY
-            </button>
-
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                handleSignOut()
-              }}
-              style={getHeaderButtonStyle(isMobileLike)}
-            >
-              SIGN OUT
-            </button>
-
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                setDisplayMode('nurse')
-              }}
-              style={getModeButtonStyle(isNurseMode, isMobileLike)}
-            >
-              NURSE DISPLAY
-            </button>
-          </div>
+            SIGN OUT
+          </button>
         </div>
 
         <div
@@ -658,7 +660,7 @@ export default function Home() {
                   : 'repeat(2, minmax(0, 1fr))',
                 gap: gridGap,
                 minHeight: 0,
-                height: isMobileLike ? 'auto' : '100%',
+                height: isWallMode && !isMobileLike ? '100%' : 'auto',
               }}
             >
               {beds.slice(0, 4).map((bed) => {
