@@ -680,7 +680,7 @@ export default function Home() {
                 display: 'grid',
                 gridTemplateColumns: '1fr 1fr',
                 gridTemplateRows: isMobileLike
-                  ? 'repeat(2, minmax(0, 1fr))'
+                  ? 'repeat(2, minmax(160px, 1fr))'
                   : 'repeat(2, minmax(0, 1fr))',
                 gap: gridGap,
                 minHeight: 0,
@@ -992,7 +992,9 @@ export default function Home() {
                           return (
                             <button
                               key={state.id}
-                              onClick={() => updateBedState(selectedBedData.id, state.id)}
+                              onClick={() =>
+                                updateBedState(selectedBedData.id, state.id)
+                              }
                               style={{
                                 width: '100%',
                                 minHeight: isMobileLike ? 46 : 50,
