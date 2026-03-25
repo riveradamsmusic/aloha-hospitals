@@ -89,13 +89,13 @@ function normalizeBeds(rows) {
 
 function getModeButtonStyle(active, isMobileLike) {
   return {
-    width: isMobileLike ? 120 : 140,
-    height: isMobileLike ? 36 : 40,
+    width: isMobileLike ? 118 : 140,
+    height: isMobileLike ? 34 : 40,
     borderRadius: 999,
     border: active ? '1px solid #3B82F6' : '1px solid #334155',
     background: active ? '#123A67' : '#111827',
     color: active ? '#66B2FF' : '#CBD5E1',
-    fontSize: isMobileLike ? 11 : 12,
+    fontSize: isMobileLike ? 10 : 12,
     fontWeight: 700,
     letterSpacing: 0.8,
     cursor: 'pointer',
@@ -109,13 +109,13 @@ function getModeButtonStyle(active, isMobileLike) {
 
 function getHeaderButtonStyle(isMobileLike) {
   return {
-    width: isMobileLike ? 110 : 128,
-    height: isMobileLike ? 36 : 40,
+    width: isMobileLike ? 108 : 128,
+    height: isMobileLike ? 34 : 40,
     borderRadius: 999,
     border: '1px solid #475569',
     background: '#111827',
     color: '#E2E8F0',
-    fontSize: isMobileLike ? 11 : 12,
+    fontSize: isMobileLike ? 10 : 12,
     fontWeight: 700,
     letterSpacing: 0.8,
     cursor: 'pointer',
@@ -312,10 +312,10 @@ export default function Home() {
     setNowTick(Date.now())
   }
 
-  const mainPadding = isMobileLike ? '16px' : 'clamp(24px, 3vw, 40px)'
-  const outerGap = isMobileLike ? '16px' : 'clamp(18px, 2vw, 28px)'
-  const gridGap = isMobileLike ? '12px' : 'clamp(16px, 2vw, 28px)'
-  const cardPadding = isMobileLike ? '12px' : 'clamp(14px, 1.8vw, 28px)'
+  const mainPadding = isMobileLike ? '12px' : 'clamp(24px, 3vw, 40px)'
+  const outerGap = isMobileLike ? '12px' : 'clamp(18px, 2vw, 28px)'
+  const gridGap = isMobileLike ? '10px' : 'clamp(16px, 2vw, 28px)'
+  const cardPadding = isMobileLike ? '10px' : 'clamp(12px, 1.4vw, 22px)'
 
   if (!mounted) {
     return null
@@ -500,20 +500,15 @@ export default function Home() {
             display: 'grid',
             gridTemplateColumns: '1fr auto',
             alignItems: 'start',
-            gap: '16px',
+            gap: '12px',
           }}
         >
-          <div
-            style={{
-              minWidth: 0,
-              justifySelf: 'start',
-            }}
-          >
+          <div style={{ minWidth: 0, justifySelf: 'start' }}>
             <div
               style={{
-                fontSize: isMobileLike ? '28px' : 'clamp(28px, 4vw, 56px)',
+                fontSize: isMobileLike ? '24px' : 'clamp(28px, 4vw, 56px)',
                 fontWeight: 700,
-                letterSpacing: isMobileLike ? '2px' : 'clamp(2px, 0.35vw, 6px)',
+                letterSpacing: isMobileLike ? '1.5px' : 'clamp(2px, 0.35vw, 6px)',
                 lineHeight: 1.05,
                 whiteSpace: 'nowrap',
               }}
@@ -523,20 +518,20 @@ export default function Home() {
 
             <div
               style={{
-                width: isMobileLike ? 44 : 'clamp(44px, 5vw, 70px)',
+                width: isMobileLike ? 40 : 'clamp(44px, 5vw, 70px)',
                 height: 4,
                 background: '#3B82F6',
-                marginTop: isMobileLike ? 10 : 'clamp(10px, 1.5vw, 18px)',
-                marginBottom: isMobileLike ? 10 : 'clamp(10px, 1.5vw, 18px)',
+                marginTop: isMobileLike ? 8 : 'clamp(10px, 1.5vw, 18px)',
+                marginBottom: isMobileLike ? 8 : 'clamp(10px, 1.5vw, 18px)',
                 borderRadius: 999,
               }}
             />
 
             <div
               style={{
-                fontSize: isMobileLike ? '14px' : 'clamp(12px, 1.6vw, 24px)',
+                fontSize: isMobileLike ? '12px' : 'clamp(12px, 1.6vw, 24px)',
                 color: '#8DA2C0',
-                letterSpacing: isMobileLike ? '1px' : 'clamp(1px, 0.2vw, 3px)',
+                letterSpacing: isMobileLike ? '0.8px' : 'clamp(1px, 0.2vw, 3px)',
                 whiteSpace: 'nowrap',
               }}
             >
@@ -551,12 +546,12 @@ export default function Home() {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'flex-end',
-              gap: isMobileLike ? 8 : 10,
+              gap: isMobileLike ? 6 : 10,
             }}
           >
             <div
               style={{
-                fontSize: isMobileLike ? '24px' : 'clamp(24px, 4vw, 56px)',
+                fontSize: isMobileLike ? '20px' : 'clamp(24px, 4vw, 56px)',
                 fontWeight: 700,
                 whiteSpace: 'nowrap',
                 lineHeight: 1.05,
@@ -572,8 +567,8 @@ export default function Home() {
             <div
               style={{
                 color: '#8DA2C0',
-                fontSize: isMobileLike ? '11px' : 'clamp(10px, 1.1vw, 18px)',
-                letterSpacing: isMobileLike ? '1px' : 'clamp(1px, 0.15vw, 2px)',
+                fontSize: isMobileLike ? '10px' : 'clamp(10px, 1.1vw, 18px)',
+                letterSpacing: isMobileLike ? '0.8px' : 'clamp(1px, 0.15vw, 2px)',
                 whiteSpace: 'nowrap',
               }}
             >
@@ -589,9 +584,9 @@ export default function Home() {
             <div
               style={{
                 display: 'flex',
-                flexWrap: 'wrap',
-                justifyContent: 'flex-end',
-                gap: 10,
+                flexDirection: isMobileLike ? 'column' : 'row',
+                alignItems: 'flex-end',
+                gap: 8,
               }}
             >
               <button
@@ -622,7 +617,7 @@ export default function Home() {
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            marginTop: isMobileLike ? -4 : 0,
+            marginTop: isMobileLike ? 2 : 0,
           }}
         >
           <button
@@ -639,13 +634,13 @@ export default function Home() {
         <div
           style={{
             borderTop: '1px solid #1F2A44',
-            paddingTop: isMobileLike ? '12px' : 'clamp(16px, 2vw, 28px)',
+            paddingTop: isMobileLike ? '10px' : 'clamp(14px, 1.6vw, 22px)',
             minHeight: 0,
             display: 'grid',
             gridTemplateRows: errorMsg
               ? 'auto minmax(0, 1fr)'
               : 'minmax(0, 1fr)',
-            gap: '12px',
+            gap: '10px',
           }}
         >
           {errorMsg && <div style={{ color: '#ff6b6b' }}>{errorMsg}</div>}
@@ -656,7 +651,7 @@ export default function Home() {
                 display: 'grid',
                 gridTemplateColumns: '1fr 1fr',
                 gridTemplateRows: isMobileLike
-                  ? 'repeat(2, minmax(180px, 1fr))'
+                  ? 'repeat(2, minmax(170px, 1fr))'
                   : 'repeat(2, minmax(0, 1fr))',
                 gap: gridGap,
                 minHeight: 0,
@@ -680,49 +675,47 @@ export default function Home() {
                       minHeight: 0,
                       display: 'flex',
                       flexDirection: 'column',
-                      justifyContent: 'space-between',
+                      justifyContent: 'flex-start',
                     }}
                   >
-                    <div>
-                      <div
-                        style={{
-                          color: '#8DA2C0',
-                          fontSize: isMobileLike ? '12px' : 'clamp(12px, 1.2vw, 20px)',
-                          letterSpacing: isMobileLike ? '1px' : 'clamp(1px, 0.25vw, 4px)',
-                          marginBottom: isMobileLike ? '10px' : 'clamp(10px, 1.5vw, 24px)',
-                          fontWeight: 600,
-                        }}
-                      >
-                        BED {String(bed.bed_number).padStart(2, '0')}
-                      </div>
-
-                      <div
-                        style={{
-                          background: styles.background,
-                          color: styles.text,
-                          borderRadius: isMobileLike ? 12 : 'clamp(12px, 1.2vw, 20px)',
-                          padding: isMobileLike
-                            ? '14px 10px'
-                            : 'clamp(14px, 1.8vw, 28px) clamp(12px, 1.6vw, 24px)',
-                          fontSize: isMobileLike ? '15px' : 'clamp(14px, 1.2vw, 22px)',
-                          fontWeight: 700,
-                          textAlign: 'center',
-                          marginBottom: isMobileLike ? '12px' : 'clamp(14px, 2vw, 28px)',
-                          lineHeight: 1.15,
-                          wordBreak: 'break-word',
-                        }}
-                      >
-                        {bed.care_states?.display_name || 'NO STATE'}
-                      </div>
+                    <div
+                      style={{
+                        color: '#8DA2C0',
+                        fontSize: isMobileLike ? '12px' : 'clamp(12px, 1.1vw, 18px)',
+                        letterSpacing: isMobileLike ? '1px' : 'clamp(1px, 0.2vw, 4px)',
+                        marginBottom: isMobileLike ? '8px' : 'clamp(8px, 1vw, 18px)',
+                        fontWeight: 600,
+                      }}
+                    >
+                      BED {String(bed.bed_number).padStart(2, '0')}
                     </div>
 
-                    <div>
+                    <div
+                      style={{
+                        background: styles.background,
+                        color: styles.text,
+                        borderRadius: isMobileLike ? 12 : 'clamp(12px, 1vw, 18px)',
+                        padding: isMobileLike
+                          ? '12px 10px'
+                          : 'clamp(12px, 1.2vw, 20px) clamp(10px, 1.2vw, 18px)',
+                        fontSize: isMobileLike ? '15px' : 'clamp(14px, 1vw, 20px)',
+                        fontWeight: 700,
+                        textAlign: 'center',
+                        marginBottom: isMobileLike ? '10px' : 'clamp(10px, 1.2vw, 18px)',
+                        lineHeight: 1.12,
+                        wordBreak: 'break-word',
+                      }}
+                    >
+                      {bed.care_states?.display_name || 'NO STATE'}
+                    </div>
+
+                    <div style={{ marginTop: 'auto' }}>
                       <div
                         style={{
                           color: '#5E7393',
-                          fontSize: isMobileLike ? '10px' : 'clamp(10px, 0.8vw, 15px)',
-                          letterSpacing: isMobileLike ? '1px' : 'clamp(1px, 0.2vw, 3px)',
-                          marginBottom: isMobileLike ? '6px' : 'clamp(6px, 0.8vw, 12px)',
+                          fontSize: isMobileLike ? '10px' : 'clamp(10px, 0.7vw, 14px)',
+                          letterSpacing: isMobileLike ? '1px' : 'clamp(1px, 0.15vw, 2px)',
+                          marginBottom: isMobileLike ? '4px' : 'clamp(4px, 0.5vw, 8px)',
                         }}
                       >
                         TIME IN STATE
@@ -730,10 +723,10 @@ export default function Home() {
 
                       <div
                         style={{
-                          fontSize: isMobileLike ? '24px' : 'clamp(22px, 2.4vw, 40px)',
+                          fontSize: isMobileLike ? '22px' : 'clamp(20px, 2vw, 34px)',
                           fontWeight: 700,
                           color: getTimerColor(minutes),
-                          lineHeight: 1.05,
+                          lineHeight: 1.02,
                         }}
                       >
                         {getFormattedTimeInState(bed.state_updated_at)}
