@@ -47,15 +47,15 @@ function getTimerColor() {
 function getWallHighlightStyles(minutes) {
   if (minutes >= 60) {
     return {
-      borderColor: '#FF4FC3', // brighter pink
-      boxShadow: '0 0 0 3px rgba(255, 79, 195, 0.55)', // stronger glow
+      borderColor: '#F9A8D4', // soft pink
+      boxShadow: '0 0 0 2px rgba(249, 168, 212, 0.34)',
     }
   }
 
   if (minutes >= 30) {
     return {
-      borderColor: '#FFE600', // brighter yellow
-      boxShadow: '0 0 0 3px rgba(255, 230, 0, 0.5)', // stronger glow
+      borderColor: '#FACC15', // soft yellow
+      boxShadow: '0 0 0 2px rgba(250, 204, 21, 0.28)',
     }
   }
 
