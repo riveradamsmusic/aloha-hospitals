@@ -41,9 +41,30 @@ function getFormattedTimeInState(timestamp) {
 }
 
 function getTimerColor(minutes) {
-  if (minutes >= 90) return '#ff4d4f'
-  if (minutes >= 60) return '#f5b000'
-  return '#f8fafc'
+  if (minutes >= 60) return '#7DD3FC'
+  if (minutes >= 30) return '#FACC15'
+  return '#F8FAFC'
+}
+
+function getWallHighlightStyles(minutes) {
+  if (minutes >= 60) {
+    return {
+      borderColor: '#7DD3FC',
+      boxShadow: '0 0 0 2px rgba(125, 211, 252, 0.32)',
+    }
+  }
+
+  if (minutes >= 30) {
+    return {
+      borderColor: '#FACC15',
+      boxShadow: '0 0 0 2px rgba(250, 204, 21, 0.28)',
+    }
+  }
+
+  return {
+    borderColor: '#1D2A4A',
+    boxShadow: 'none',
+  }
 }
 
 function getStateStyles(color) {
@@ -659,23 +680,26 @@ export default function Home() {
                 display: 'grid',
                 gridTemplateColumns: '1fr 1fr',
                 gridTemplateRows: isMobileLike
-                  ? 'repeat(2, minmax(170px, 1fr))'
+                  ? 'repeat(2, minmax(0, 1fr))'
                   : 'repeat(2, minmax(0, 1fr))',
                 gap: gridGap,
                 minHeight: 0,
-                height: isWallMode && !isMobileLike ? '100%' : 'auto',
+                height: '100%',
+                alignContent: 'stretch',
               }}
             >
               {beds.slice(0, 4).map((bed) => {
                 const minutes = getMinutesInState(bed.state_updated_at)
                 const styles = getStateStyles(bed.care_states?.color)
+                const highlightStyles = getWallHighlightStyles(minutes)
 
                 return (
                   <div
                     key={bed.id}
                     style={{
                       background: '#0d1730',
-                      border: '1px solid #1D2A4A',
+                      border: `1px solid ${highlightStyles.borderColor}`,
+                      boxShadow: highlightStyles.boxShadow,
                       borderRadius: isMobileLike ? 16 : 'clamp(16px, 1.5vw, 28px)',
                       padding: cardPadding,
                       position: 'relative',
@@ -968,9 +992,7 @@ export default function Home() {
                           return (
                             <button
                               key={state.id}
-                              onClick={() =>
-                                updateBedState(selectedBedData.id, state.id)
-                              }
+                              onClick={() => updateBedState(selectedBedData.id, state.id)}
                               style={{
                                 width: '100%',
                                 minHeight: isMobileLike ? 46 : 50,
