@@ -47,14 +47,14 @@ function getTimerColor() {
 function getWallHighlightStyles(minutes) {
   if (minutes >= 60) {
     return {
-      borderColor: '#F9A8D4', // soft pink
+      borderColor: '#F9A8D4',
       boxShadow: '0 0 0 2px rgba(249, 168, 212, 0.34)',
     }
   }
 
   if (minutes >= 30) {
     return {
-      borderColor: '#FACC15', // soft yellow
+      borderColor: '#FACC15',
       boxShadow: '0 0 0 2px rgba(250, 204, 21, 0.28)',
     }
   }
@@ -101,6 +101,7 @@ function normalizeBeds(rows) {
       bed_number: row.bed_number,
       state_updated_at: row.state_updated_at,
       state_id: row.state_id,
+      care_cell_id: row.care_cell_id,
       care_states: normalizedState,
     }
   })
@@ -161,6 +162,10 @@ export default function Home() {
   const [loginPassword, setLoginPassword] = useState('')
   const [loginError, setLoginError] = useState('')
 
+  const [currentHospitalId, setCurrentHospitalId] = useState(null)
+  const [currentUnitId, setCurrentUnitId] = useState(null)
+  const [currentCareCellId, setCurrentCareCellId] = useState(null)
+
   const isMobileLike = viewportWidth < 900
   const isNurseMode = displayMode === 'nurse'
   const isWallMode = displayMode === 'wall'
@@ -173,7 +178,49 @@ export default function Home() {
     return beds[0] || null
   }, [beds, selectedBed])
 
-  async function fetchBeds() {
+  async function loadDemoScope() {
+    const { data: hospital, error: hospitalError } = await supabase
+      .from('hospitals')
+      .select('id, name, code')
+      .eq('code', 'hospital1')
+      .single()
+
+    if (hospitalError || !hospital) {
+      throw new Error('Hospital not found')
+    }
+
+    const { data: unit, error: unitError } = await supabase
+      .from('units')
+      .select('id, name, code, hospital_id')
+      .eq('hospital_id', hospital.id)
+      .eq('code', 'icu')
+      .single()
+
+    if (unitError || !unit) {
+      throw new Error('Unit not found')
+    }
+
+    const { data: careCell, error: careCellError } = await supabase
+      .from('care_cells')
+      .select('id, name, code, unit_id')
+      .eq('unit_id', unit.id)
+      .eq('code', 'carecella')
+      .single()
+
+    if (careCellError || !careCell) {
+      throw new Error('Care Cell not found')
+    }
+
+    setCurrentHospitalId(hospital.id)
+    setCurrentUnitId(unit.id)
+    setCurrentCareCellId(careCell.id)
+
+    return { hospital, unit, careCell }
+  }
+
+  async function fetchBeds(careCellId = currentCareCellId) {
+    if (!careCellId) return
+
     const { data, error } = await supabase
       .from('beds')
       .select(`
@@ -181,14 +228,17 @@ export default function Home() {
         bed_number,
         state_updated_at,
         state_id,
+        care_cell_id,
         care_states (
           id,
           name,
           display_name,
           color,
-          priority
+          priority,
+          care_cell_id
         )
       `)
+      .eq('care_cell_id', careCellId)
       .order('bed_number', { ascending: true })
 
     if (error) {
@@ -211,10 +261,14 @@ export default function Home() {
     })
   }
 
-  async function fetchStates() {
+  async function fetchStates(careCellId = currentCareCellId) {
+    if (!careCellId) return
+
     const { data, error } = await supabase
       .from('care_states')
       .select('*')
+      .eq('care_cell_id', careCellId)
+      .eq('is_active', true)
       .order('priority', { ascending: true })
 
     if (error) {
@@ -230,8 +284,19 @@ export default function Home() {
     setViewportWidth(window.innerWidth)
 
     const savedAuth = window.localStorage.getItem('carecell_demo_auth')
+
     if (savedAuth === 'true') {
-      setIsAuthenticated(true)
+      loadDemoScope()
+        .then(() => {
+          setIsAuthenticated(true)
+          setLoginError('')
+        })
+        .catch((error) => {
+          console.error(error)
+          setLoginError('Could not restore demo session')
+          setIsAuthenticated(false)
+          window.localStorage.removeItem('carecell_demo_auth')
+        })
     }
 
     const handleResize = () => {
@@ -246,17 +311,17 @@ export default function Home() {
   }, [])
 
   useEffect(() => {
-    if (!isAuthenticated) return
+    if (!isAuthenticated || !currentCareCellId) return
 
-    fetchBeds()
-    fetchStates()
+    fetchBeds(currentCareCellId)
+    fetchStates(currentCareCellId)
 
     const timer = setInterval(() => {
       setNowTick(Date.now())
     }, 5000)
 
     const channel = supabase
-      .channel(`beds-realtime-${Date.now()}`)
+      .channel(`beds-realtime-${currentCareCellId}`)
       .on(
         'postgres_changes',
         {
@@ -265,7 +330,7 @@ export default function Home() {
           table: 'beds',
         },
         () => {
-          fetchBeds()
+          fetchBeds(currentCareCellId)
         }
       )
       .subscribe()
@@ -274,20 +339,29 @@ export default function Home() {
       clearInterval(timer)
       supabase.removeChannel(channel)
     }
-  }, [isAuthenticated])
+  }, [isAuthenticated, currentCareCellId])
 
-  function handleLogin(e) {
+  async function handleLogin(e) {
     e.preventDefault()
 
     if (loginUsername === 'Hospital 1' && loginPassword === 'demo') {
-      if (document.activeElement instanceof HTMLElement) {
-        document.activeElement.blur()
+      try {
+        if (document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur()
+        }
+
+        await loadDemoScope()
+
+        setIsAuthenticated(true)
+        setLoginError('')
+        window.localStorage.setItem('carecell_demo_auth', 'true')
+        setLoginPassword('')
+        return
+      } catch (error) {
+        console.error(error)
+        setLoginError('Demo scope could not be loaded')
+        return
       }
-      setIsAuthenticated(true)
-      setLoginError('')
-      window.localStorage.setItem('carecell_demo_auth', 'true')
-      setLoginPassword('')
-      return
     }
 
     setLoginError('Invalid username or password')
@@ -299,6 +373,11 @@ export default function Home() {
     setLoginUsername('')
     setLoginPassword('')
     setLoginError('')
+    setCurrentHospitalId(null)
+    setCurrentUnitId(null)
+    setCurrentCareCellId(null)
+    setBeds([])
+    setStates([])
     window.localStorage.removeItem('carecell_demo_auth')
   }
 
