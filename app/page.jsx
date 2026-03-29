@@ -1104,11 +1104,16 @@ export default function Home() {
                 height: 46,
                 borderRadius: 12,
                 border: '1px solid #334155',
-                background: '#111827',
-                color: 'white',
+                background: '#0F172A',
+                color: '#E2E8F0',
                 padding: '0 14px',
                 boxSizing: 'border-box',
                 fontSize: 16,
+                appearance: 'none',
+                WebkitAppearance: 'none',
+                MozAppearance: 'none',
+                outline: 'none',
+                boxShadow: 'none',
               }}
             >
               <option value="">Select Unit</option>
@@ -1130,11 +1135,16 @@ export default function Home() {
                 height: 46,
                 borderRadius: 12,
                 border: '1px solid #334155',
-                background: '#111827',
-                color: 'white',
+                background: '#0F172A',
+                color: '#E2E8F0',
                 padding: '0 14px',
                 boxSizing: 'border-box',
                 fontSize: 16,
+                appearance: 'none',
+                WebkitAppearance: 'none',
+                MozAppearance: 'none',
+                outline: 'none',
+                boxShadow: 'none',
               }}
             >
               <option value="">Select Care Cell</option>
