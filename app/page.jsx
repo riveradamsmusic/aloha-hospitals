@@ -2,6 +2,14 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import LoginScreen from './components/LoginScreen'
+import ScopeSelector from './components/ScopeSelector'
+import WallDisplay from './components/WallDisplay'
+import NurseDisplay from './components/NurseDisplay'
+
+// ======================
+// HELPERS
+// ======================
 
 function parseSupabaseTimestamp(timestamp) {
   if (!timestamp || typeof timestamp !== 'string') return Date.now()
@@ -147,22 +155,15 @@ function getHeaderButtonStyle(isMobileLike) {
   }
 }
 
-function getLoginModeButtonStyle(active) {
-  return {
-    flex: 1,
-    height: 42,
-    borderRadius: 12,
-    border: active ? '1px solid #3B82F6' : '1px solid #334155',
-    background: active ? '#123A67' : '#111827',
-    color: active ? '#66B2FF' : '#CBD5E1',
-    fontSize: 12,
-    fontWeight: 700,
-    letterSpacing: 0.8,
-    cursor: 'pointer',
-  }
-}
+// ======================
+// PAGE
+// ======================
 
 export default function Home() {
+  // ======================
+  // STATE
+  // ======================
+
   const [beds, setBeds] = useState([])
   const [states, setStates] = useState([])
   const [selectedBed, setSelectedBed] = useState(null)
@@ -174,7 +175,7 @@ export default function Home() {
 
   const [authMode, setAuthMode] = useState('demo')
   const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [sessionType, setSessionType] = useState(null) // demo | staff
+  const [sessionType, setSessionType] = useState(null)
 
   const [loginUsername, setLoginUsername] = useState('')
   const [loginPassword, setLoginPassword] = useState('')
@@ -208,6 +209,10 @@ export default function Home() {
     }
     return beds[0] || null
   }, [beds, selectedBed])
+
+  // ======================
+  // DATA FETCHING
+  // ======================
 
   async function fetchBeds(careCellId = currentCareCellId) {
     if (!careCellId) return
@@ -255,13 +260,11 @@ export default function Home() {
   async function fetchStates(careCellId = currentCareCellId) {
     if (!careCellId) return
 
-    let query = supabase
+    const { data, error } = await supabase
       .from('care_states')
       .select('*')
       .eq('care_cell_id', careCellId)
       .order('priority', { ascending: true })
-
-    const { data, error } = await query
 
     if (error) {
       console.error(error)
@@ -382,26 +385,9 @@ export default function Home() {
     return data || []
   }
 
-  async function applySelectedScope(unitId, careCellId) {
-    const unit = availableUnits.find((item) => item.id === unitId)
-    const careCell = availableCareCells.find((item) => item.id === careCellId)
-
-    setSelectedUnitId(unitId)
-    setSelectedCareCellId(careCellId)
-    setCurrentUnitId(unitId)
-    setCurrentUnitName(unit?.name || '')
-    setCurrentCareCellId(careCellId)
-    setCurrentCareCellName(careCell?.name || '')
-    setHasSelectedScope(true)
-
-    window.localStorage.setItem(
-      'carecell_staff_scope',
-      JSON.stringify({
-        unitId,
-        careCellId,
-      })
-    )
-  }
+  // ======================
+  // AUTH / SESSION
+  // ======================
 
   useEffect(() => {
     setMounted(true)
@@ -751,10 +737,18 @@ export default function Home() {
     setNowTick(Date.now())
   }
 
+  // ======================
+  // LAYOUT VALUES
+  // ======================
+
   const mainPadding = isMobileLike ? '12px' : 'clamp(24px, 3vw, 40px)'
   const outerGap = isMobileLike ? '12px' : 'clamp(18px, 2vw, 28px)'
   const gridGap = isMobileLike ? '10px' : 'clamp(16px, 2vw, 28px)'
   const cardPadding = isMobileLike ? '10px' : 'clamp(12px, 1.4vw, 22px)'
+
+  // ======================
+  // EARLY RETURNS
+  // ======================
 
   if (!mounted) {
     return null
@@ -762,448 +756,47 @@ export default function Home() {
 
   if (!isAuthenticated) {
     return (
-      <main
-        style={{
-          minHeight: '100dvh',
-          width: '100vw',
-          background: '#07111f',
-          color: 'white',
-          fontFamily: 'Arial, sans-serif',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: 24,
-          boxSizing: 'border-box',
-        }}
-      >
-        <div
-          style={{
-            width: '100%',
-            maxWidth: 440,
-            background: '#0d1730',
-            border: '1px solid #1D2A4A',
-            borderRadius: 24,
-            padding: isMobileLike ? 20 : 28,
-            boxShadow: '0 20px 50px rgba(0,0,0,0.35)',
-          }}
-        >
-          <div
-            style={{
-              fontSize: isMobileLike ? 28 : 34,
-              fontWeight: 700,
-              letterSpacing: 2,
-              marginBottom: 10,
-            }}
-          >
-            CARE CELL
-          </div>
-
-          <div
-            style={{
-              width: 56,
-              height: 4,
-              background: '#3B82F6',
-              borderRadius: 999,
-              marginBottom: 18,
-            }}
-          />
-
-          <div
-            style={{
-              display: 'flex',
-              gap: 10,
-              marginBottom: 18,
-            }}
-          >
-            <button
-              onClick={() => {
-                setAuthMode('demo')
-                setLoginError('')
-              }}
-              style={getLoginModeButtonStyle(authMode === 'demo')}
-            >
-              DEMO LOGIN
-            </button>
-
-            <button
-              onClick={() => {
-                setAuthMode('staff')
-                setLoginError('')
-              }}
-              style={getLoginModeButtonStyle(authMode === 'staff')}
-            >
-              STAFF LOGIN
-            </button>
-          </div>
-
-          {authMode === 'demo' ? (
-            <>
-              <div
-                style={{
-                  color: '#8DA2C0',
-                  fontSize: 14,
-                  letterSpacing: 1,
-                  marginBottom: 24,
-                }}
-              >
-                DEMO LOGIN
-              </div>
-
-              <form
-                onSubmit={handleDemoLogin}
-                style={{
-                  display: 'grid',
-                  gap: 14,
-                }}
-              >
-                <input
-                  type="text"
-                  placeholder="Username"
-                  value={loginUsername}
-                  onChange={(e) => setLoginUsername(e.target.value)}
-                  style={{
-                    width: '100%',
-                    height: 46,
-                    borderRadius: 12,
-                    border: '1px solid #334155',
-                    background: '#111827',
-                    color: 'white',
-                    padding: '0 14px',
-                    boxSizing: 'border-box',
-                    fontSize: 16,
-                  }}
-                />
-
-                <input
-                  type="password"
-                  placeholder="Password"
-                  value={loginPassword}
-                  onChange={(e) => setLoginPassword(e.target.value)}
-                  style={{
-                    width: '100%',
-                    height: 46,
-                    borderRadius: 12,
-                    border: '1px solid #334155',
-                    background: '#111827',
-                    color: 'white',
-                    padding: '0 14px',
-                    boxSizing: 'border-box',
-                    fontSize: 16,
-                  }}
-                />
-
-                {loginError && (
-                  <div
-                    style={{
-                      color: '#ff6b6b',
-                      fontSize: 13,
-                    }}
-                  >
-                    {loginError}
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  style={{
-                    height: 46,
-                    borderRadius: 12,
-                    border: '1px solid #3B82F6',
-                    background: '#123A67',
-                    color: '#66B2FF',
-                    fontSize: 13,
-                    fontWeight: 700,
-                    letterSpacing: 1,
-                    cursor: 'pointer',
-                  }}
-                >
-                  SIGN IN
-                </button>
-              </form>
-
-              <div
-                style={{
-                  marginTop: 18,
-                  color: '#64748B',
-                  fontSize: 12,
-                  lineHeight: 1.5,
-                }}
-              >
-                Username: <strong>Hospital 1</strong>
-                <br />
-                Password: <strong>demo</strong>
-              </div>
-            </>
-          ) : (
-            <>
-              <div
-                style={{
-                  color: '#8DA2C0',
-                  fontSize: 14,
-                  letterSpacing: 1,
-                  marginBottom: 24,
-                }}
-              >
-                STAFF LOGIN
-              </div>
-
-              <form
-                onSubmit={handleStaffLogin}
-                style={{
-                  display: 'grid',
-                  gap: 14,
-                }}
-              >
-                <input
-                  type="email"
-                  placeholder="Email"
-                  value={staffEmail}
-                  onChange={(e) => setStaffEmail(e.target.value)}
-                  style={{
-                    width: '100%',
-                    height: 46,
-                    borderRadius: 12,
-                    border: '1px solid #334155',
-                    background: '#111827',
-                    color: 'white',
-                    padding: '0 14px',
-                    boxSizing: 'border-box',
-                    fontSize: 16,
-                  }}
-                />
-
-                <input
-                  type="password"
-                  placeholder="Password"
-                  value={staffPassword}
-                  onChange={(e) => setStaffPassword(e.target.value)}
-                  style={{
-                    width: '100%',
-                    height: 46,
-                    borderRadius: 12,
-                    border: '1px solid #334155',
-                    background: '#111827',
-                    color: 'white',
-                    padding: '0 14px',
-                    boxSizing: 'border-box',
-                    fontSize: 16,
-                  }}
-                />
-
-                {loginError && (
-                  <div
-                    style={{
-                      color: '#ff6b6b',
-                      fontSize: 13,
-                    }}
-                  >
-                    {loginError}
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  style={{
-                    height: 46,
-                    borderRadius: 12,
-                    border: '1px solid #3B82F6',
-                    background: '#123A67',
-                    color: '#66B2FF',
-                    fontSize: 13,
-                    fontWeight: 700,
-                    letterSpacing: 1,
-                    cursor: 'pointer',
-                  }}
-                >
-                  SIGN IN
-                </button>
-              </form>
-            </>
-          )}
-        </div>
-      </main>
+      <LoginScreen
+        isMobileLike={isMobileLike}
+        authMode={authMode}
+        setAuthMode={setAuthMode}
+        loginUsername={loginUsername}
+        setLoginUsername={setLoginUsername}
+        loginPassword={loginPassword}
+        setLoginPassword={setLoginPassword}
+        staffEmail={staffEmail}
+        setStaffEmail={setStaffEmail}
+        staffPassword={staffPassword}
+        setStaffPassword={setStaffPassword}
+        loginError={loginError}
+        handleDemoLogin={handleDemoLogin}
+        handleStaffLogin={handleStaffLogin}
+      />
     )
   }
 
   if (sessionType === 'staff' && !hasSelectedScope) {
     return (
-      <main
-        style={{
-          minHeight: '100dvh',
-          width: '100vw',
-          background: '#07111f',
-          color: 'white',
-          fontFamily: 'Arial, sans-serif',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: 24,
-          boxSizing: 'border-box',
-        }}
-      >
-        <div
-          style={{
-            width: '100%',
-            maxWidth: 520,
-            background: '#0d1730',
-            border: '1px solid #1D2A4A',
-            borderRadius: 24,
-            padding: isMobileLike ? 20 : 28,
-            boxShadow: '0 20px 50px rgba(0,0,0,0.35)',
-          }}
-        >
-          <div
-            style={{
-              fontSize: isMobileLike ? 28 : 34,
-              fontWeight: 700,
-              letterSpacing: 2,
-              marginBottom: 10,
-            }}
-          >
-            SELECT DISPLAY
-          </div>
-
-          <div
-            style={{
-              width: 56,
-              height: 4,
-              background: '#3B82F6',
-              borderRadius: 999,
-              marginBottom: 18,
-            }}
-          />
-
-          <div
-            style={{
-              color: '#8DA2C0',
-              fontSize: 14,
-              letterSpacing: 1,
-              marginBottom: 20,
-            }}
-          >
-            {currentHospitalName || 'HOSPITAL'}
-          </div>
-
-          <div
-            style={{
-              display: 'grid',
-              gap: 14,
-            }}
-          >
-            <select
-              value={selectedUnitId}
-              onChange={async (e) => {
-                const unitId = e.target.value
-                setSelectedUnitId(unitId)
-                setSelectedCareCellId('')
-                setLoginError('')
-                await loadCareCellsForUnit(unitId)
-              }}
-              style={{
-                width: '100%',
-                height: 46,
-                borderRadius: 12,
-                border: '1px solid #334155',
-                background: '#0F172A',
-                color: '#E2E8F0',
-                padding: '0 14px',
-                boxSizing: 'border-box',
-                fontSize: 16,
-                appearance: 'none',
-                WebkitAppearance: 'none',
-                MozAppearance: 'none',
-                outline: 'none',
-                boxShadow: 'none',
-              }}
-            >
-              <option value="">Select Unit</option>
-              {availableUnits.map((unit) => (
-                <option key={unit.id} value={unit.id}>
-                  {unit.name}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={selectedCareCellId}
-              onChange={(e) => {
-                setSelectedCareCellId(e.target.value)
-                setLoginError('')
-              }}
-              style={{
-                width: '100%',
-                height: 46,
-                borderRadius: 12,
-                border: '1px solid #334155',
-                background: '#0F172A',
-                color: '#E2E8F0',
-                padding: '0 14px',
-                boxSizing: 'border-box',
-                fontSize: 16,
-                appearance: 'none',
-                WebkitAppearance: 'none',
-                MozAppearance: 'none',
-                outline: 'none',
-                boxShadow: 'none',
-              }}
-            >
-              <option value="">Select Care Cell</option>
-              {availableCareCells.map((careCell) => (
-                <option key={careCell.id} value={careCell.id}>
-                  {careCell.name}
-                </option>
-              ))}
-            </select>
-
-            {loginError && (
-              <div
-                style={{
-                  color: '#ff6b6b',
-                  fontSize: 13,
-                }}
-              >
-                {loginError}
-              </div>
-            )}
-
-            <button
-              onClick={handleOpenSelectedCareCell}
-              style={{
-                height: 46,
-                borderRadius: 12,
-                border: '1px solid #3B82F6',
-                background: '#123A67',
-                color: '#66B2FF',
-                fontSize: 13,
-                fontWeight: 700,
-                letterSpacing: 1,
-                cursor: 'pointer',
-              }}
-            >
-              OPEN CARE CELL
-            </button>
-
-            <button
-              onClick={handleSignOut}
-              style={{
-                height: 46,
-                borderRadius: 12,
-                border: '1px solid #475569',
-                background: '#111827',
-                color: '#E2E8F0',
-                fontSize: 13,
-                fontWeight: 700,
-                letterSpacing: 1,
-                cursor: 'pointer',
-              }}
-            >
-              SIGN OUT
-            </button>
-          </div>
-        </div>
-      </main>
+      <ScopeSelector
+        isMobileLike={isMobileLike}
+        currentHospitalName={currentHospitalName}
+        availableUnits={availableUnits}
+        availableCareCells={availableCareCells}
+        selectedUnitId={selectedUnitId}
+        setSelectedUnitId={setSelectedUnitId}
+        selectedCareCellId={selectedCareCellId}
+        setSelectedCareCellId={setSelectedCareCellId}
+        loginError={loginError}
+        loadCareCellsForUnit={loadCareCellsForUnit}
+        handleOpenSelectedCareCell={handleOpenSelectedCareCell}
+        handleSignOut={handleSignOut}
+      />
     )
   }
+
+  // ======================
+  // MAIN UI
+  // ======================
 
   return (
     <main
@@ -1400,385 +993,34 @@ export default function Home() {
           {errorMsg && <div style={{ color: '#ff6b6b' }}>{errorMsg}</div>}
 
           {isWallMode && (
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gridTemplateRows: isMobileLike
-                  ? 'repeat(2, minmax(0, 1fr))'
-                  : 'repeat(2, minmax(0, 1fr))',
-                gap: gridGap,
-                minHeight: 0,
-                height: isMobileLike ? 'calc(100dvh - 230px)' : '100%',
-                alignContent: 'stretch',
-              }}
-            >
-              {beds.slice(0, 4).map((bed) => {
-                const minutes = getMinutesInState(bed.state_updated_at)
-                const styles = getStateStyles(bed.care_states?.color)
-                const highlightStyles = getWallHighlightStyles(minutes)
-
-                return (
-                  <div
-                    key={bed.id}
-                    style={{
-                      background: '#0d1730',
-                      border: `1px solid ${highlightStyles.borderColor}`,
-                      boxShadow: highlightStyles.boxShadow,
-                      borderRadius: isMobileLike ? 16 : 'clamp(16px, 1.5vw, 28px)',
-                      padding: cardPadding,
-                      position: 'relative',
-                      overflow: 'hidden',
-                      minHeight: 0,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'flex-start',
-                    }}
-                  >
-                    <div
-                      style={{
-                        color: '#8DA2C0',
-                        fontSize: isMobileLike ? '12px' : 'clamp(12px, 1.1vw, 18px)',
-                        letterSpacing: isMobileLike ? '1px' : 'clamp(1px, 0.2vw, 4px)',
-                        marginBottom: isMobileLike ? '8px' : 'clamp(8px, 1vw, 18px)',
-                        fontWeight: 600,
-                      }}
-                    >
-                      BED {String(bed.bed_number).padStart(2, '0')}
-                    </div>
-
-                    <div
-                      style={{
-                        background: styles.background,
-                        color: styles.text,
-                        borderRadius: isMobileLike ? 12 : 'clamp(12px, 1vw, 18px)',
-                        padding: isMobileLike
-                          ? '12px 10px'
-                          : 'clamp(12px, 1.2vw, 20px) clamp(10px, 1.2vw, 18px)',
-                        fontSize: isMobileLike ? '15px' : 'clamp(14px, 1vw, 20px)',
-                        fontWeight: 700,
-                        textAlign: 'center',
-                        marginBottom: isMobileLike ? '10px' : 'clamp(10px, 1.2vw, 18px)',
-                        lineHeight: 1.12,
-                        wordBreak: 'break-word',
-                      }}
-                    >
-                      {bed.care_states?.display_name || 'NO STATE'}
-                    </div>
-
-                    <div style={{ marginTop: 'auto' }}>
-                      <div
-                        style={{
-                          color: '#5E7393',
-                          fontSize: isMobileLike ? '10px' : 'clamp(10px, 0.7vw, 14px)',
-                          letterSpacing: isMobileLike ? '1px' : 'clamp(1px, 0.15vw, 2px)',
-                          marginBottom: isMobileLike ? '4px' : 'clamp(4px, 0.5vw, 8px)',
-                        }}
-                      >
-                        TIME IN STATE
-                      </div>
-
-                      <div
-                        style={{
-                          fontSize: isMobileLike ? '22px' : 'clamp(20px, 2vw, 34px)',
-                          fontWeight: 700,
-                          color: getTimerColor(),
-                          lineHeight: 1.02,
-                        }}
-                      >
-                        {getFormattedTimeInState(bed.state_updated_at)}
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
+            <WallDisplay
+              beds={beds}
+              isMobileLike={isMobileLike}
+              gridGap={gridGap}
+              cardPadding={cardPadding}
+              getMinutesInState={getMinutesInState}
+              getStateStyles={getStateStyles}
+              getWallHighlightStyles={getWallHighlightStyles}
+              getFormattedTimeInState={getFormattedTimeInState}
+              getTimerColor={getTimerColor}
+            />
           )}
 
           {isNurseMode && selectedBedData && (
-            <div
-              style={{
-                width: '100%',
-                display: 'flex',
-                justifyContent: 'center',
-              }}
-            >
-              <div
-                style={{
-                  width: '100%',
-                  maxWidth: 820,
-                  display: 'grid',
-                  gridTemplateColumns: '1fr',
-                  gap: isMobileLike ? 12 : 14,
-                  alignItems: 'start',
-                }}
-              >
-                <div style={{ background: '#07111f', minWidth: 0 }}>
-                  <div
-                    style={{
-                      marginBottom: isMobileLike ? 10 : 12,
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: isMobileLike ? 22 : 28,
-                        fontWeight: 700,
-                        lineHeight: 1.05,
-                        marginBottom: 6,
-                        textAlign: isMobileLike ? 'left' : 'center',
-                      }}
-                    >
-                      Update Bed Status
-                    </div>
-
-                    <div
-                      style={{
-                        color: '#8DA2C0',
-                        fontSize: isMobileLike ? 12 : 14,
-                        letterSpacing: isMobileLike ? 1.2 : 1.8,
-                        whiteSpace: 'normal',
-                        textAlign: isMobileLike ? 'left' : 'center',
-                      }}
-                    >
-                      {(currentUnitName || 'UNIT').toUpperCase()} — {(currentHospitalName || 'HOSPITAL').toUpperCase()} — {(currentCareCellName || 'CARE CELL').toUpperCase()}
-                    </div>
-                  </div>
-
-                  <div
-                    style={{
-                      borderTop: '1px solid #1F2A44',
-                      paddingTop: isMobileLike ? 12 : 14,
-                      display: 'grid',
-                      gap: isMobileLike ? 12 : 14,
-                    }}
-                  >
-                    <div>
-                      <div
-                        style={{
-                          color: '#5E7393',
-                          fontSize: isMobileLike ? 11 : 12,
-                          letterSpacing: isMobileLike ? 1.2 : 1.8,
-                          fontWeight: 700,
-                          marginBottom: 8,
-                          textAlign: isMobileLike ? 'left' : 'center',
-                        }}
-                      >
-                        SELECT BED
-                      </div>
-
-                      <div
-                        style={{
-                          display: 'grid',
-                          gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
-                          gap: isMobileLike ? 8 : 10,
-                        }}
-                      >
-                        {beds.slice(0, 4).map((bed) => {
-                          const active = selectedBedData?.id === bed.id
-
-                          return (
-                            <button
-                              key={bed.id}
-                              onClick={() => setSelectedBed(bed.id)}
-                              style={{
-                                height: isMobileLike ? 48 : 52,
-                                borderRadius: 14,
-                                border: active
-                                  ? '1px solid #E5E7EB'
-                                  : '1px solid #1D2A4A',
-                                background: active ? '#E5E7EB' : '#17233C',
-                                color: active ? '#111827' : '#8DA2C0',
-                                fontSize: isMobileLike ? 18 : 22,
-                                fontWeight: 700,
-                                letterSpacing: 1.5,
-                                cursor: 'pointer',
-                              }}
-                            >
-                              {String(bed.bed_number).padStart(2, '0')}
-                            </button>
-                          )
-                        })}
-                      </div>
-                    </div>
-
-                    <div
-                      style={{
-                        background: '#0d1730',
-                        border: '1px solid #1D2A4A',
-                        borderRadius: isMobileLike ? 14 : 18,
-                        padding: isMobileLike ? 12 : 14,
-                      }}
-                    >
-                      <div
-                        style={{
-                          color: '#5E7393',
-                          fontSize: isMobileLike ? 11 : 12,
-                          letterSpacing: isMobileLike ? 1.2 : 1.8,
-                          fontWeight: 700,
-                          marginBottom: 8,
-                          textAlign: isMobileLike ? 'left' : 'center',
-                        }}
-                      >
-                        CURRENT STATUS
-                      </div>
-
-                      <div
-                        style={{
-                          color: getStateStyles(selectedBedData.care_states?.color).text,
-                          fontSize: isMobileLike ? 20 : 26,
-                          fontWeight: 700,
-                          lineHeight: 1.05,
-                          marginBottom: 10,
-                          wordBreak: 'break-word',
-                          textAlign: isMobileLike ? 'left' : 'center',
-                        }}
-                      >
-                        {selectedBedData.care_states?.display_name || 'NO STATE'}
-                      </div>
-
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'baseline',
-                          justifyContent: 'space-between',
-                          gap: 10,
-                          flexWrap: 'wrap',
-                        }}
-                      >
-                        <div>
-                          <div
-                            style={{
-                              color: '#5E7393',
-                              fontSize: isMobileLike ? 10 : 11,
-                              letterSpacing: 1.1,
-                              fontWeight: 700,
-                              marginBottom: 4,
-                            }}
-                          >
-                            TIME IN STATE
-                          </div>
-
-                          <div
-                            style={{
-                              fontSize: isMobileLike ? 18 : 22,
-                              fontWeight: 700,
-                              color: getTimerColor(),
-                              lineHeight: 1.05,
-                            }}
-                          >
-                            {getFormattedTimeInState(selectedBedData.state_updated_at)}
-                          </div>
-                        </div>
-
-                        <div
-                          style={{
-                            color: '#8DA2C0',
-                            fontSize: isMobileLike ? 10 : 11,
-                            letterSpacing: 1.1,
-                            fontWeight: 700,
-                            padding: '5px 8px',
-                            borderRadius: 999,
-                            border: '1px solid #334155',
-                            background: '#111827',
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          BED {String(selectedBedData.bed_number).padStart(2, '0')}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <div
-                        style={{
-                          color: '#5E7393',
-                          fontSize: isMobileLike ? 11 : 12,
-                          letterSpacing: isMobileLike ? 1.2 : 1.8,
-                          fontWeight: 700,
-                          marginBottom: 8,
-                          textAlign: isMobileLike ? 'left' : 'center',
-                        }}
-                      >
-                        UPDATE TO...
-                      </div>
-
-                      <div
-                        style={{
-                          display: 'grid',
-                          gap: isMobileLike ? 8 : 9,
-                        }}
-                      >
-                        {states.length === 0 ? (
-                          <div style={{ color: '#ff6b6b', fontSize: 13 }}>
-                            No care states found for this Care Cell.
-                          </div>
-                        ) : (
-                          states.map((state) => {
-                            const stateStyles = getStateStyles(state.color)
-                            const isCurrent = selectedBedData.state_id === state.id
-
-                            return (
-                              <button
-                                key={state.id}
-                                onClick={() =>
-                                  updateBedState(selectedBedData.id, state.id)
-                                }
-                                style={{
-                                  width: '100%',
-                                  minHeight: isMobileLike ? 46 : 50,
-                                  borderRadius: isMobileLike ? 12 : 14,
-                                  border: isCurrent
-                                    ? '2px solid #E5E7EB'
-                                    : '1px solid #334155',
-                                  background: stateStyles.background,
-                                  color: stateStyles.text,
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'space-between',
-                                  gap: 10,
-                                  padding: isMobileLike ? '10px 12px' : '10px 14px',
-                                  textAlign: 'left',
-                                  boxSizing: 'border-box',
-                                }}
-                              >
-                                <span
-                                  style={{
-                                    fontSize: isMobileLike ? 13 : 14,
-                                    fontWeight: 700,
-                                    lineHeight: 1.15,
-                                    wordBreak: 'break-word',
-                                  }}
-                                >
-                                  {state.display_name}
-                                </span>
-
-                                {isCurrent && (
-                                  <span
-                                    style={{
-                                      flexShrink: 0,
-                                      padding: isMobileLike ? '4px 7px' : '5px 8px',
-                                      borderRadius: 999,
-                                      background: 'rgba(255,255,255,0.12)',
-                                      color: '#E5E7EB',
-                                      fontSize: isMobileLike ? 8 : 9,
-                                      fontWeight: 700,
-                                      letterSpacing: 0.7,
-                                    }}
-                                  >
-                                    CURRENT
-                                  </span>
-                                )}
-                              </button>
-                            )
-                          })
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <NurseDisplay
+              beds={beds}
+              states={states}
+              selectedBedData={selectedBedData}
+              setSelectedBed={setSelectedBed}
+              updateBedState={updateBedState}
+              isMobileLike={isMobileLike}
+              currentUnitName={currentUnitName}
+              currentHospitalName={currentHospitalName}
+              currentCareCellName={currentCareCellName}
+              getStateStyles={getStateStyles}
+              getFormattedTimeInState={getFormattedTimeInState}
+              getTimerColor={getTimerColor}
+            />
           )}
         </div>
       </div>
