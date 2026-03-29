@@ -178,44 +178,23 @@ export default function Home() {
     return beds[0] || null
   }, [beds, selectedBed])
 
-  async function loadDemoScope() {
-    const { data: hospital, error: hospitalError } = await supabase
-      .from('hospitals')
-      .select('id, name, code')
-      .eq('code', 'hospital1')
+  async function loadDemoScope(username = 'Hospital 1', password = 'demo') {
+    const { data: loginRow, error: loginError } = await supabase
+      .from('demo_logins')
+      .select('hospital_id, unit_id, care_cell_id')
+      .eq('username', username)
+      .eq('password', password)
       .single()
 
-    if (hospitalError || !hospital) {
-      throw new Error('Hospital not found')
+    if (loginError || !loginRow) {
+      throw new Error('Demo login not found')
     }
 
-    const { data: unit, error: unitError } = await supabase
-      .from('units')
-      .select('id, name, code, hospital_id')
-      .eq('hospital_id', hospital.id)
-      .eq('code', 'icu')
-      .single()
+    setCurrentHospitalId(loginRow.hospital_id)
+    setCurrentUnitId(loginRow.unit_id)
+    setCurrentCareCellId(loginRow.care_cell_id)
 
-    if (unitError || !unit) {
-      throw new Error('Unit not found')
-    }
-
-    const { data: careCell, error: careCellError } = await supabase
-      .from('care_cells')
-      .select('id, name, code, unit_id')
-      .eq('unit_id', unit.id)
-      .eq('code', 'carecella')
-      .single()
-
-    if (careCellError || !careCell) {
-      throw new Error('Care Cell not found')
-    }
-
-    setCurrentHospitalId(hospital.id)
-    setCurrentUnitId(unit.id)
-    setCurrentCareCellId(careCell.id)
-
-    return { hospital, unit, careCell }
+    return loginRow
   }
 
   async function fetchBeds(careCellId = currentCareCellId) {
@@ -284,9 +263,10 @@ export default function Home() {
     setViewportWidth(window.innerWidth)
 
     const savedAuth = window.localStorage.getItem('carecell_demo_auth')
+    const savedUsername = window.localStorage.getItem('carecell_demo_username')
 
-    if (savedAuth === 'true') {
-      loadDemoScope()
+    if (savedAuth === 'true' && savedUsername) {
+      loadDemoScope(savedUsername, 'demo')
         .then(() => {
           setIsAuthenticated(true)
           setLoginError('')
@@ -296,6 +276,7 @@ export default function Home() {
           setLoginError('Could not restore demo session')
           setIsAuthenticated(false)
           window.localStorage.removeItem('carecell_demo_auth')
+          window.localStorage.removeItem('carecell_demo_username')
         })
     }
 
@@ -344,27 +325,22 @@ export default function Home() {
   async function handleLogin(e) {
     e.preventDefault()
 
-    if (loginUsername === 'Hospital 1' && loginPassword === 'demo') {
-      try {
-        if (document.activeElement instanceof HTMLElement) {
-          document.activeElement.blur()
-        }
-
-        await loadDemoScope()
-
-        setIsAuthenticated(true)
-        setLoginError('')
-        window.localStorage.setItem('carecell_demo_auth', 'true')
-        setLoginPassword('')
-        return
-      } catch (error) {
-        console.error(error)
-        setLoginError('Demo scope could not be loaded')
-        return
+    try {
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur()
       }
-    }
 
-    setLoginError('Invalid username or password')
+      await loadDemoScope(loginUsername, loginPassword)
+
+      setIsAuthenticated(true)
+      setLoginError('')
+      window.localStorage.setItem('carecell_demo_auth', 'true')
+      window.localStorage.setItem('carecell_demo_username', loginUsername)
+      setLoginPassword('')
+    } catch (error) {
+      console.error(error)
+      setLoginError('Invalid username or password')
+    }
   }
 
   function handleSignOut() {
@@ -379,6 +355,7 @@ export default function Home() {
     setBeds([])
     setStates([])
     window.localStorage.removeItem('carecell_demo_auth')
+    window.localStorage.removeItem('carecell_demo_username')
   }
 
   async function updateBedState(bedId, stateId) {
@@ -1060,65 +1037,71 @@ export default function Home() {
                           gap: isMobileLike ? 8 : 9,
                         }}
                       >
-                        {states.map((state) => {
-                          const stateStyles = getStateStyles(state.color)
-                          const isCurrent = selectedBedData.state_id === state.id
+                        {states.length === 0 ? (
+                          <div style={{ color: '#ff6b6b', fontSize: 13 }}>
+                            No care states found for this Care Cell.
+                          </div>
+                        ) : (
+                          states.map((state) => {
+                            const stateStyles = getStateStyles(state.color)
+                            const isCurrent = selectedBedData.state_id === state.id
 
-                          return (
-                            <button
-                              key={state.id}
-                              onClick={() =>
-                                updateBedState(selectedBedData.id, state.id)
-                              }
-                              style={{
-                                width: '100%',
-                                minHeight: isMobileLike ? 46 : 50,
-                                borderRadius: isMobileLike ? 12 : 14,
-                                border: isCurrent
-                                  ? '2px solid #E5E7EB'
-                                  : '1px solid #334155',
-                                background: stateStyles.background,
-                                color: stateStyles.text,
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                gap: 10,
-                                padding: isMobileLike ? '10px 12px' : '10px 14px',
-                                textAlign: 'left',
-                                boxSizing: 'border-box',
-                              }}
-                            >
-                              <span
+                            return (
+                              <button
+                                key={state.id}
+                                onClick={() =>
+                                  updateBedState(selectedBedData.id, state.id)
+                                }
                                 style={{
-                                  fontSize: isMobileLike ? 13 : 14,
-                                  fontWeight: 700,
-                                  lineHeight: 1.15,
-                                  wordBreak: 'break-word',
+                                  width: '100%',
+                                  minHeight: isMobileLike ? 46 : 50,
+                                  borderRadius: isMobileLike ? 12 : 14,
+                                  border: isCurrent
+                                    ? '2px solid #E5E7EB'
+                                    : '1px solid #334155',
+                                  background: stateStyles.background,
+                                  color: stateStyles.text,
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                  gap: 10,
+                                  padding: isMobileLike ? '10px 12px' : '10px 14px',
+                                  textAlign: 'left',
+                                  boxSizing: 'border-box',
                                 }}
                               >
-                                {state.display_name}
-                              </span>
-
-                              {isCurrent && (
                                 <span
                                   style={{
-                                    flexShrink: 0,
-                                    padding: isMobileLike ? '4px 7px' : '5px 8px',
-                                    borderRadius: 999,
-                                    background: 'rgba(255,255,255,0.12)',
-                                    color: '#E5E7EB',
-                                    fontSize: isMobileLike ? 8 : 9,
+                                    fontSize: isMobileLike ? 13 : 14,
                                     fontWeight: 700,
-                                    letterSpacing: 0.7,
+                                    lineHeight: 1.15,
+                                    wordBreak: 'break-word',
                                   }}
                                 >
-                                  CURRENT
+                                  {state.display_name}
                                 </span>
-                              )}
-                            </button>
-                          )
-                        })}
+
+                                {isCurrent && (
+                                  <span
+                                    style={{
+                                      flexShrink: 0,
+                                      padding: isMobileLike ? '4px 7px' : '5px 8px',
+                                      borderRadius: 999,
+                                      background: 'rgba(255,255,255,0.12)',
+                                      color: '#E5E7EB',
+                                      fontSize: isMobileLike ? 8 : 9,
+                                      fontWeight: 700,
+                                      letterSpacing: 0.7,
+                                    }}
+                                  >
+                                    CURRENT
+                                  </span>
+                                )}
+                              </button>
+                            )
+                          })
+                        )}
                       </div>
                     </div>
                   </div>
