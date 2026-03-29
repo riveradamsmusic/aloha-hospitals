@@ -1370,7 +1370,7 @@ export default function Home() {
               }}
               style={getHeaderButtonStyle(isMobileLike)}
             >
-              CHANGE DISPLAY
+              DISPLAY
             </button>
           )}
 
