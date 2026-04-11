@@ -160,12 +160,11 @@ function getHeaderButtonStyle(isMobileLike) {
 // ======================
 
 export default function Home() {
-  // ======================
-  // STATE
-  // ======================
-
   const [beds, setBeds] = useState([])
   const [states, setStates] = useState([])
+  const [messageTemplates, setMessageTemplates] = useState([])
+  const [activeMessages, setActiveMessages] = useState([])
+
   const [selectedBed, setSelectedBed] = useState(null)
   const [errorMsg, setErrorMsg] = useState('')
   const [nowTick, setNowTick] = useState(Date.now())
@@ -210,9 +209,9 @@ export default function Home() {
     return beds[0] || null
   }, [beds, selectedBed])
 
-  // ======================
-  // DATA FETCHING
-  // ======================
+  function getActiveMessageForBed(bedId) {
+    return activeMessages.find((message) => message.bed_id === bedId) || null
+  }
 
   async function fetchBeds(careCellId = currentCareCellId) {
     if (!careCellId) return
@@ -240,6 +239,7 @@ export default function Home() {
     if (error) {
       console.error(error)
       setErrorMsg(error.message)
+      setBeds([])
       return
     }
 
@@ -268,6 +268,7 @@ export default function Home() {
 
     if (error) {
       console.error(error)
+      setStates([])
       return
     }
 
@@ -278,6 +279,78 @@ export default function Home() {
     )
 
     setStates(filtered)
+  }
+
+  async function fetchMessageTemplates(careCellId = currentCareCellId) {
+    if (!careCellId) return
+
+    const { data, error } = await supabase
+      .from('message_templates')
+      .select('*')
+      .eq('care_cell_id', careCellId)
+      .eq('is_active', true)
+      .order('priority', { ascending: true })
+
+    if (error) {
+      console.error(error)
+      setMessageTemplates([])
+      return
+    }
+
+    setMessageTemplates(data || [])
+  }
+
+  async function fetchActiveMessages(careCellId = currentCareCellId) {
+    if (!careCellId) return
+
+    const { data, error } = await supabase
+      .from('care_messages')
+      .select('*')
+      .eq('care_cell_id', careCellId)
+      .is('cleared_at', null)
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error(error)
+      setActiveMessages([])
+      return
+    }
+
+    const now = Date.now()
+
+    const filtered = (data || []).filter((message) => {
+      if (!message.expires_at) return true
+      return new Date(message.expires_at).getTime() > now
+    })
+
+    setActiveMessages(filtered)
+  }
+
+  async function sendMessageForBed(bedId, template) {
+    if (!bedId || !template || !currentHospitalId || !currentUnitId || !currentCareCellId) return
+
+    const createdBy = currentProfile?.id || null
+
+    const { error } = await supabase
+      .from('care_messages')
+      .insert({
+        hospital_id: currentHospitalId,
+        unit_id: currentUnitId,
+        care_cell_id: currentCareCellId,
+        bed_id: bedId,
+        message_template_id: template.id,
+        message_code: template.code,
+        message_label: template.label,
+        created_by: createdBy,
+      })
+
+    if (error) {
+      console.error(error)
+      setErrorMsg(error.message)
+      return
+    }
+
+    fetchActiveMessages(currentCareCellId)
   }
 
   async function loadDemoScope(username = 'Hospital 1', password = 'demo') {
@@ -300,13 +373,13 @@ export default function Home() {
       throw new Error('Demo login not found')
     }
 
-    setCurrentHospitalId(loginRow.hospital_id)
+    setCurrentHospitalId(loginRow.hospital_id || null)
     setCurrentHospitalName(loginRow.hospitals?.name || '')
-    setCurrentUnitId(loginRow.unit_id)
+    setCurrentUnitId(loginRow.unit_id || null)
     setCurrentUnitName(loginRow.units?.name || '')
-    setCurrentCareCellId(loginRow.care_cell_id)
+    setCurrentCareCellId(loginRow.care_cell_id || null)
     setCurrentCareCellName(loginRow.care_cells?.name || '')
-    setHasSelectedScope(true)
+    setHasSelectedScope(!!loginRow.care_cell_id)
 
     return loginRow
   }
@@ -335,13 +408,18 @@ export default function Home() {
         .single()
 
       setCurrentHospitalName(hospital?.name || '')
+    } else {
+      setCurrentHospitalName('')
     }
 
     return profile
   }
 
   async function loadUnitsForProfile(profile) {
-    if (!profile?.hospital_id) return []
+    if (!profile?.hospital_id) {
+      setAvailableUnits([])
+      return []
+    }
 
     let query = supabase
       .from('units')
@@ -357,6 +435,7 @@ export default function Home() {
 
     if (error) {
       console.error(error)
+      setAvailableUnits([])
       throw new Error('Could not load units')
     }
 
@@ -378,16 +457,13 @@ export default function Home() {
 
     if (error) {
       console.error(error)
+      setAvailableCareCells([])
       throw new Error('Could not load care cells')
     }
 
     setAvailableCareCells(data || [])
     return data || []
   }
-
-  // ======================
-  // AUTH / SESSION
-  // ======================
 
   useEffect(() => {
     setMounted(true)
@@ -397,11 +473,12 @@ export default function Home() {
       try {
         const savedDemoAuth = window.localStorage.getItem('carecell_demo_auth')
         const savedDemoUsername = window.localStorage.getItem('carecell_demo_username')
+        const savedDemoPassword = window.localStorage.getItem('carecell_demo_password')
 
-        if (savedDemoAuth === 'true' && savedDemoUsername) {
+        if (savedDemoAuth === 'true' && savedDemoUsername && savedDemoPassword) {
           setAuthMode('demo')
           setSessionType('demo')
-          await loadDemoScope(savedDemoUsername, 'demo')
+          await loadDemoScope(savedDemoUsername, savedDemoPassword)
           setIsAuthenticated(true)
           setLoginError('')
           return
@@ -422,15 +499,25 @@ export default function Home() {
           if (profile.role === 'wall_display' && profile.care_cell_id) {
             const unitIdToUse = profile.unit_id || ''
             setSelectedUnitId(unitIdToUse)
-            await loadCareCellsForUnit(unitIdToUse)
+
+            if (unitIdToUse) {
+              await loadCareCellsForUnit(unitIdToUse)
+            }
+
             setCurrentUnitId(profile.unit_id || null)
-            setCurrentCareCellId(profile.care_cell_id)
-            setHasSelectedScope(true)
+            setCurrentCareCellId(profile.care_cell_id || null)
+            setHasSelectedScope(!!profile.care_cell_id)
             return
           }
 
           const savedScopeRaw = window.localStorage.getItem('carecell_staff_scope')
-          const savedScope = savedScopeRaw ? JSON.parse(savedScopeRaw) : null
+          let savedScope = null
+
+          try {
+            savedScope = savedScopeRaw ? JSON.parse(savedScopeRaw) : null
+          } catch {
+            savedScope = null
+          }
 
           if (profile.role === 'unit_user' && profile.unit_id) {
             setSelectedUnitId(profile.unit_id)
@@ -478,6 +565,9 @@ export default function Home() {
         }
       } catch (error) {
         console.error(error)
+        setIsAuthenticated(false)
+        setSessionType(null)
+        setHasSelectedScope(false)
       }
     }
 
@@ -499,13 +589,15 @@ export default function Home() {
 
     fetchBeds(currentCareCellId)
     fetchStates(currentCareCellId)
+    fetchMessageTemplates(currentCareCellId)
+    fetchActiveMessages(currentCareCellId)
 
     const timer = setInterval(() => {
       setNowTick(Date.now())
     }, 5000)
 
     const channel = supabase
-      .channel(`beds-realtime-${currentCareCellId}`)
+      .channel(`carecell-realtime-${currentCareCellId}`)
       .on(
         'postgres_changes',
         {
@@ -515,6 +607,17 @@ export default function Home() {
         },
         () => {
           fetchBeds(currentCareCellId)
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'care_messages',
+        },
+        () => {
+          fetchActiveMessages(currentCareCellId)
         }
       )
       .subscribe()
@@ -538,8 +641,12 @@ export default function Home() {
       setSessionType('demo')
       setIsAuthenticated(true)
       setLoginError('')
+      setErrorMsg('')
+
       window.localStorage.setItem('carecell_demo_auth', 'true')
       window.localStorage.setItem('carecell_demo_username', loginUsername)
+      window.localStorage.setItem('carecell_demo_password', loginPassword)
+
       setLoginPassword('')
     } catch (error) {
       console.error(error)
@@ -570,11 +677,16 @@ export default function Home() {
       setSessionType('staff')
       setIsAuthenticated(true)
       setLoginError('')
+      setErrorMsg('')
       setHasSelectedScope(false)
       setBeds([])
       setStates([])
+      setMessageTemplates([])
+      setActiveMessages([])
+
       window.localStorage.removeItem('carecell_demo_auth')
       window.localStorage.removeItem('carecell_demo_username')
+      window.localStorage.removeItem('carecell_demo_password')
 
       if (profile.role === 'unit_user' && profile.unit_id) {
         setSelectedUnitId(profile.unit_id)
@@ -655,6 +767,7 @@ export default function Home() {
       setCurrentCareCellName(careCell?.name || '')
       setHasSelectedScope(true)
       setLoginError('')
+      setErrorMsg('')
 
       window.localStorage.setItem(
         'carecell_staff_scope',
@@ -683,6 +796,7 @@ export default function Home() {
     setStaffEmail('')
     setStaffPassword('')
     setLoginError('')
+    setErrorMsg('')
     setCurrentHospitalId(null)
     setCurrentHospitalName('')
     setCurrentUnitId(null)
@@ -696,9 +810,12 @@ export default function Home() {
     setHasSelectedScope(false)
     setBeds([])
     setStates([])
+    setMessageTemplates([])
+    setActiveMessages([])
 
     window.localStorage.removeItem('carecell_demo_auth')
     window.localStorage.removeItem('carecell_demo_username')
+    window.localStorage.removeItem('carecell_demo_password')
     window.localStorage.removeItem('carecell_staff_scope')
   }
 
@@ -737,18 +854,10 @@ export default function Home() {
     setNowTick(Date.now())
   }
 
-  // ======================
-  // LAYOUT VALUES
-  // ======================
-
   const mainPadding = isMobileLike ? '12px' : 'clamp(24px, 3vw, 40px)'
   const outerGap = isMobileLike ? '12px' : 'clamp(18px, 2vw, 28px)'
   const gridGap = isMobileLike ? '10px' : 'clamp(16px, 2vw, 28px)'
   const cardPadding = isMobileLike ? '10px' : 'clamp(12px, 1.4vw, 22px)'
-
-  // ======================
-  // EARLY RETURNS
-  // ======================
 
   if (!mounted) {
     return null
@@ -793,10 +902,6 @@ export default function Home() {
       />
     )
   }
-
-  // ======================
-  // MAIN UI
-  // ======================
 
   return (
     <main
@@ -1003,6 +1108,7 @@ export default function Home() {
               getWallHighlightStyles={getWallHighlightStyles}
               getFormattedTimeInState={getFormattedTimeInState}
               getTimerColor={getTimerColor}
+              getActiveMessageForBed={getActiveMessageForBed}
             />
           )}
 
@@ -1020,6 +1126,9 @@ export default function Home() {
               getStateStyles={getStateStyles}
               getFormattedTimeInState={getFormattedTimeInState}
               getTimerColor={getTimerColor}
+              messageTemplates={messageTemplates}
+              activeMessage={getActiveMessageForBed(selectedBedData.id)}
+              sendMessageForBed={sendMessageForBed}
             />
           )}
         </div>
